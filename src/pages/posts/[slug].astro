@@ -26,6 +26,8 @@ import BlogPostsLink from '../../components/BlogPostsLink.astro'
 import BlogTagsLink from '../../components/BlogTagsLink.astro'
 import styles from '../../styles/blog.module.css'
 
+import PostFeaturedImage from '../../components/PostFeaturedImage.astro'
+
 export async function getStaticPaths() {
   const posts = await getAllPosts()
   return posts.map((post: interfaces.Post) => ({ params: { slug: post.Slug } }))
@@ -104,6 +106,10 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
       <PostDate post={post} />
       <PostTags post={post} />
       <PostTitle post={post} enableLink={false} />
+
+        <!-- 👇アイキャッチ表示処理 -->
+      <PostFeaturedImage post={post} />
+      
       <PostBody blocks={blocks} />
       <PostTags post={post} />
 
