@@ -475,6 +475,7 @@ export async function getDatabase(): Promise<Database> {
     cover = {
       Type: res.cover.type,
       Url: res.cover.external?.url || res.cover?.file?.url || '',
+      ExpiryTime: pageObject.cover.file?.expiry_time,
     }
   }
 
