@@ -952,6 +952,37 @@ function _buildPost(pageObject: responses.PageObject): Post {
     }
   }
 
+  let cover: FileObject | null = null
+  if (res.cover) {
+    if (res.cover.type === 'external' && 'external' in res.cover) {
+      cover = {
+        Type: res.cover.type,
+        Url: res.cover.external?.url || '',
+        ExpiryTime: null,
+      }
+    } else if (res.cover.type === 'file' && 'file' in res.cover) {
+      cover = {
+        Type: res.cover.type,
+        Url: res.cover.file?.url || '',
+        ExpiryTime: res.cover.file?.expiry_time || null,
+      }
+    }
+  }
+
+  const database: Database = {
+    Title: res.title.map((richText) => richText.plain_text).join(''),
+    Description: res.description
+      .map((richText) => richText.plain_text)
+      .join(''),
+    Icon: icon,
+    Cover: cover,
+  }
+
+  dbCache = database
+  return database
+}
+
+  
   let featuredImage: FileObject | null = null
 
 // ① FeaturedImage プロパティ（任意：ある場合はこちら優先）
@@ -968,7 +999,6 @@ function _buildPost(pageObject: responses.PageObject): Post {
 if (!featuredImage && cover) {
   featuredImage = cover
 }
-
 
   const post: Post = {
     PageId: pageObject.id,
