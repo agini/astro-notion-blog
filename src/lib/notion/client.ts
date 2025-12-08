@@ -470,14 +470,6 @@ export async function getDatabase(): Promise<Database> {
     }
   }
 
-  let cover: FileObject | null = null
-  if (res.cover) {
-    cover = {
-      Type: res.cover.type,
-      Url: res.cover.external?.url || res.cover?.file?.url || '',
-    }
-  }
-
   const database: Database = {
     Title: res.title.map((richText) => richText.plain_text).join(''),
     Description: res.description
@@ -930,6 +922,18 @@ function _validPageObject(pageObject: responses.PageObject): boolean {
 function _buildPost(pageObject: responses.PageObject): Post {
   const prop = pageObject.properties
 
+  let cover: FileObject | null = null
+  if (pageObject.cover) {
+  cover = {
+    Type: pageObject.cover.type,
+    Url:
+      pageObject.cover.external?.url ||
+      pageObject.cover.file?.url ||
+      '',
+    ExpiryTime: pageObject.cover.file?.expiry_time || null,
+  }
+}
+  
   let icon: FileObject | Emoji | null = null
   if (pageObject.icon) {
     if (pageObject.icon.type === 'emoji' && 'emoji' in pageObject.icon) {
@@ -948,29 +952,23 @@ function _buildPost(pageObject: responses.PageObject): Post {
     }
   }
 
-  let cover: FileObject | null = null
-  if (pageObject.cover) {
-    cover = {
-      Type: pageObject.cover.type,
-      Url: pageObject.cover.external?.url || '',
-    }
-  }
-
   let featuredImage: FileObject | null = null
+
+// ① FeaturedImage プロパティ（任意：ある場合はこちら優先）
   if (prop.FeaturedImage.files && prop.FeaturedImage.files.length > 0) {
-    if (prop.FeaturedImage.files[0].external) {
-      featuredImage = {
-        Type: prop.FeaturedImage.type,
-        Url: prop.FeaturedImage.files[0].external.url,
-      }
-    } else if (prop.FeaturedImage.files[0].file) {
-      featuredImage = {
-        Type: prop.FeaturedImage.type,
-        Url: prop.FeaturedImage.files[0].file.url,
-        ExpiryTime: prop.FeaturedImage.files[0].file.expiry_time,
-      }
-    }
+  const f = prop.FeaturedImage.files[0]
+  featuredImage = {
+    Type: f.type,
+    Url: f.external?.url || f.file?.url || '',
+    ExpiryTime: f.file?.expiry_time || null,
   }
+}
+
+// ② 無ければ Page Cover を使う（今回の目的）
+if (!featuredImage && cover) {
+  featuredImage = cover
+}
+
 
   const post: Post = {
     PageId: pageObject.id,
