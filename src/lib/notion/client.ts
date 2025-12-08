@@ -922,80 +922,83 @@ function _validPageObject(pageObject: responses.PageObject): boolean {
 function _buildPost(pageObject: responses.PageObject): Post {
   const prop = pageObject.properties
 
+  // --- Cover ---
   let cover: FileObject | null = null
   if (pageObject.cover) {
-  cover = {
-    Type: pageObject.cover.type,
-    Url:
-      pageObject.cover.external?.url ||
-      pageObject.cover.file?.url ||
-      '',
-    ExpiryTime: pageObject.cover.file?.expiry_time || null,
+    cover = {
+      Type: pageObject.cover.type,
+      Url:
+        pageObject.cover.external?.url ||
+        pageObject.cover.file?.url ||
+        '',
+      ExpiryTime: pageObject.cover.file?.expiry_time || null,
+    }
   }
-}
-  
+
+  // --- Icon ---
   let icon: FileObject | Emoji | null = null
   if (pageObject.icon) {
-    if (pageObject.icon.type === 'emoji' && 'emoji' in pageObject.icon) {
+    if (pageObject.icon.type === 'emoji') {
       icon = {
-        Type: pageObject.icon.type,
+        Type: 'emoji',
         Emoji: pageObject.icon.emoji,
       }
-    } else if (
-      pageObject.icon.type === 'external' &&
-      'external' in pageObject.icon
-    ) {
+    } else if (pageObject.icon.type === 'external') {
       icon = {
-        Type: pageObject.icon.type,
+        Type: 'external',
         Url: pageObject.icon.external?.url || '',
+      }
+    } else if (pageObject.icon.type === 'file') {
+      icon = {
+        Type: 'file',
+        Url: pageObject.icon.file?.url || '',
+        ExpiryTime: pageObject.icon.file?.expiry_time || null,
       }
     }
   }
 
-  dbCache = database
-  return database
-}
-
-  
+  // --- Featured Image ---
   let featuredImage: FileObject | null = null
 
-// ① FeaturedImage プロパティ（任意：ある場合はこちら優先）
-  if (prop.FeaturedImage.files && prop.FeaturedImage.files.length > 0) {
-  const f = prop.FeaturedImage.files[0]
-  featuredImage = {
-    Type: f.type,
-    Url: f.external?.url || f.file?.url || '',
-    ExpiryTime: f.file?.expiry_time || null,
+  // ① FeaturedImage プロパティ
+  if (prop.FeaturedImage?.files && prop.FeaturedImage.files.length > 0) {
+    const f = prop.FeaturedImage.files[0]
+    featuredImage = {
+      Type: f.type,
+      Url: f.external?.url || f.file?.url || '',
+      ExpiryTime: f.file?.expiry_time || null,
+    }
   }
-}
 
-// ② 無ければ Page Cover を使う（今回の目的）
-if (!featuredImage && cover) {
-  featuredImage = cover
-}
+  // ② なければ Cover を使う
+  if (!featuredImage && cover) {
+    featuredImage = cover
+  }
 
+  // --- Build Post ---
   const post: Post = {
     PageId: pageObject.id,
     Title: prop.Page.title
-      ? prop.Page.title.map((richText) => richText.plain_text).join('')
+      ? prop.Page.title.map((r) => r.plain_text).join('')
       : '',
     Icon: icon,
     Cover: cover,
     Slug: prop.Slug.rich_text
-      ? prop.Slug.rich_text.map((richText) => richText.plain_text).join('')
+      ? prop.Slug.rich_text.map((r) => r.plain_text).join('')
       : '',
     Date: prop.Date.date ? prop.Date.date.start : '',
-    Tags: prop.Tags.multi_select ? prop.Tags.multi_select : [],
+    Tags: prop.Tags.multi_select || [],
     Excerpt:
       prop.Excerpt.rich_text && prop.Excerpt.rich_text.length > 0
-        ? prop.Excerpt.rich_text.map((richText) => richText.plain_text).join('')
+        ? prop.Excerpt.rich_text.map((r) => r.plain_text).join('')
         : '',
     FeaturedImage: featuredImage,
-    Rank: prop.Rank.number ? prop.Rank.number : 0,
+    Rank: prop.Rank.number || 0,
   }
 
   return post
 }
+
 
 function _buildRichText(richTextObject: responses.RichTextObject): RichText {
   const annotation: Annotation = {
