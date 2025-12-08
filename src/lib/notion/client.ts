@@ -470,19 +470,6 @@ export async function getDatabase(): Promise<Database> {
     }
   }
 
-  let cover: FileObject | null = null
-  if (pageObject.cover) {
-  cover = {
-    Type: pageObject.cover.type,
-    Url:
-      pageObject.cover.external?.url ||
-      pageObject.cover.file?.url ||
-      '',
-    ExpiryTime: pageObject.cover.file?.expiry_time || null,
-  }
-}
-
-
   const database: Database = {
     Title: res.title.map((richText) => richText.plain_text).join(''),
     Description: res.description
@@ -948,6 +935,18 @@ if (pageObject.cover) {
 function _buildPost(pageObject: responses.PageObject): Post {
   const prop = pageObject.properties
 
+  let cover: FileObject | null = null
+  if (pageObject.cover) {
+  cover = {
+    Type: pageObject.cover.type,
+    Url:
+      pageObject.cover.external?.url ||
+      pageObject.cover.file?.url ||
+      '',
+    ExpiryTime: pageObject.cover.file?.expiry_time || null,
+  }
+}
+  
   let icon: FileObject | Emoji | null = null
   if (pageObject.icon) {
     if (pageObject.icon.type === 'emoji' && 'emoji' in pageObject.icon) {
