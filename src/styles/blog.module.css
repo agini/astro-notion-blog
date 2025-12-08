@@ -1,6 +1,12 @@
 .main header {
   padding: 0 0 20px;
 }
+@media (max-width: 640px) {
+  .main header {
+    margin: 0 auto 40px;
+  }
+}
+
 .main footer {
   border-top: 1px dashed #888;
   margin: 0 auto;
