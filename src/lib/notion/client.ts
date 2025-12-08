@@ -471,13 +471,17 @@ export async function getDatabase(): Promise<Database> {
   }
 
   let cover: FileObject | null = null
-  if (res.cover) {
-    cover = {
-      Type: res.cover.type,
-      Url: res.cover.external?.url || res.cover?.file?.url || '',
-      ExpiryTime: pageObject.cover.file?.expiry_time,
-    }
+  if (pageObject.cover) {
+  cover = {
+    Type: pageObject.cover.type,
+    Url:
+      pageObject.cover.external?.url ||
+      pageObject.cover.file?.url ||
+      '',
+    ExpiryTime: pageObject.cover.file?.expiry_time || null,
   }
+}
+
 
   const database: Database = {
     Title: res.title.map((richText) => richText.plain_text).join(''),
