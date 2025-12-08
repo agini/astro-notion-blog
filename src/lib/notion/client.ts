@@ -953,20 +953,6 @@ function _buildPost(pageObject: responses.PageObject): Post {
     }
   }
 
-  let cover: FileObject | null = null
-
-if (pageObject.cover) {
-  cover = {
-    Type: pageObject.cover.type,
-    Url:
-      pageObject.cover.external?.url ||
-      pageObject.cover.file?.url ||
-      '',
-    ExpiryTime: pageObject.cover.file?.expiry_time || null,
-  }
-}
-
-
   let featuredImage: FileObject | null = null
 
 // ① FeaturedImage プロパティ（任意：ある場合はこちら優先）
