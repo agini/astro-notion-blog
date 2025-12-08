@@ -919,19 +919,6 @@ function _validPageObject(pageObject: responses.PageObject): boolean {
   )
 }
 
-// Page Cover（Notionページのカバー画像）
-let cover: FileObject | null = null
-if (pageObject.cover) {
-  cover = {
-    Type: pageObject.cover.type,
-    Url:
-      pageObject.cover.external?.url ||
-      pageObject.cover.file?.url ||
-      '',
-    ExpiryTime: pageObject.cover.file?.expiry_time || null,
-  }
-}
-
 function _buildPost(pageObject: responses.PageObject): Post {
   const prop = pageObject.properties
 
