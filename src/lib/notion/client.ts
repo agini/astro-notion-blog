@@ -962,20 +962,22 @@ function _buildPost(pageObject: responses.PageObject): Post {
   }
 
   let featuredImage: FileObject | null = null
+
+// ① FeaturedImage プロパティ（任意：ある場合はこちら優先）
   if (prop.FeaturedImage.files && prop.FeaturedImage.files.length > 0) {
-    if (prop.FeaturedImage.files[0].external) {
-      featuredImage = {
-        Type: prop.FeaturedImage.type,
-        Url: prop.FeaturedImage.files[0].external.url,
-      }
-    } else if (prop.FeaturedImage.files[0].file) {
-      featuredImage = {
-        Type: prop.FeaturedImage.type,
-        Url: prop.FeaturedImage.files[0].file.url,
-        ExpiryTime: prop.FeaturedImage.files[0].file.expiry_time,
-      }
-    }
+  const f = prop.FeaturedImage.files[0]
+  featuredImage = {
+    Type: f.type,
+    Url: f.external?.url || f.file?.url || '',
+    ExpiryTime: f.file?.expiry_time || null,
   }
+}
+
+// ② 無ければ Page Cover を使う（今回の目的）
+if (!featuredImage && cover) {
+  featuredImage = cover
+}
+
 
   const post: Post = {
     PageId: pageObject.id,
