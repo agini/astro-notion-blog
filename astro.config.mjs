@@ -36,9 +36,6 @@ const getSite = function () {
 export default defineConfig({
   site: getSite(),
   base: BASE_PATH,
-  
-  output: "static",
-  
   integrations: [
     icon(),
     CoverImageDownloader(),
