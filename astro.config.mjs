@@ -37,7 +37,7 @@ export default defineConfig({
   site: getSite(),
   base: BASE_PATH,
   
-  output: "static"
+  output: "static",
   
   integrations: [
     icon(),
