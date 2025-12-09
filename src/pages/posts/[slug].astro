@@ -1,7 +1,8 @@
 ---
-/* ⭐ これを一番上に置く（import の前） */
+/* ⭐ これをファイルの最上部に1回だけ置く */
 const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
 
+import * as interfaces from '../../lib/interfaces.ts'
 import Layout from '../../layouts/Layout.astro'
 import PostDate from '../../components/PostDate.astro'
 import PostTags from '../../components/PostTags.astro'
@@ -13,64 +14,47 @@ import BlogTagsLink from '../../components/BlogTagsLink.astro'
 import PostFeaturedImage from '../../components/PostFeaturedImage.astro'
 import styles from '../../styles/blog.module.css'
 
-const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
-
-/* ---------------------------------------------
- * 1. getStaticPaths → Workers API /posts を使用
- * --------------------------------------------- */
+/* --------------------------------------------------
+ *  getStaticPaths：投稿スラッグの一覧
+ * -------------------------------------------------- */
 export async function getStaticPaths() {
   const res = await fetch(`${API_BASE}/posts`);
   const data = await res.json();
 
-  return data.results.map(post => ({
+  return data.results.map((post) => ({
     params: { slug: post.slug },
   }));
 }
 
 const { slug } = Astro.params;
 
-/* ---------------------------------------------------
- * 2. 記事一覧から対象 slug の投稿を取得
- * --------------------------------------------------- */
+/* --------------------------------------------------
+ *  投稿本体
+ * -------------------------------------------------- */
 const listRes = await fetch(`${API_BASE}/posts`);
 const listJson = await listRes.json();
 const allPosts = listJson.results;
 
-// 対象記事
-const post = allPosts.find(p => p.slug === slug);
-if (!post) throw new Error(`Post not found: slug=${slug}`);
+const post = allPosts.find((p) => p.slug === slug);
+if (!post) {
+  throw new Error(`Post not found: slug=${slug}`);
+}
 
-/* ---------------------------------------------------
- * 3. Blocks を Workers API から取得
- *    /post/{pageId}
- * --------------------------------------------------- */
+/* ブロック内容 */
 const detailRes = await fetch(`${API_BASE}/post/${post.id}`);
 const detailJson = await detailRes.json();
-
 const blocks = detailJson.blocks || [];
 
-/* ---------------------------------------------------
- * 4. Recommended / Latest / Tags を Workers API から取得
- * --------------------------------------------------- */
-const rankedRes = await fetch(`${API_BASE}/ranked-posts`);
-const rankedJson = await rankedRes.json();
+/* その他情報 */
+const ranked = await (await fetch(`${API_BASE}/ranked-posts`)).json();
+const tags = await (await fetch(`${API_BASE}/tags`)).json();
+const latest = await (await fetch(`${API_BASE}/posts`)).json();
 
-const tagsRes = await fetch(`${API_BASE}/tags`);
-const tagsJson = await tagsRes.json();
+/* Prev / Next */
+const idx = allPosts.findIndex((p) => p.slug === slug);
+const prevPost = allPosts[idx + 1] || null;
+const nextPost = allPosts[idx - 1] || null;
 
-const latestRes = await fetch(`${API_BASE}/posts`);
-const latestJson = await latestRes.json();
-
-/* ---------------------------------------------------
- * 5. Prev / Next 計算
- * --------------------------------------------------- */
-const currentIndex = allPosts.findIndex(p => p.slug === slug);
-const prevPost = allPosts[currentIndex + 1] || null;
-const nextPost = allPosts[currentIndex - 1] || null;
-
-/* ---------------------------------------------------
- * 6. OGP 対応（存在すれば使う）
- * --------------------------------------------------- */
 const ogImage = post.featuredImage ?? "";
 ---
 
@@ -97,8 +81,8 @@ const ogImage = post.featuredImage ?? "";
   </div>
 
   <div slot="aside" class="aside">
-    <BlogPostsLink heading="Recommended" posts={rankedJson.results || []} />
-    <BlogPostsLink heading="Latest posts" posts={latestJson.results || []} />
-    <BlogTagsLink heading="Categories" tags={tagsJson || []} />
+    <BlogPostsLink heading="Posts in the same category" posts={ranked.results || []} />
+    <BlogPostsLink heading="Latest posts" posts={latest.results || []} />
+    <BlogTagsLink heading="Categories" tags={tags || []} />
   </div>
 </Layout>
