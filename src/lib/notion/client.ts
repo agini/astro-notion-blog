@@ -450,6 +450,18 @@ export async function getDatabase(): Promise<Database> {
     }
   )
 
+  let cover: FileObject | null = null
+  if (res.cover) {
+    cover = {
+      Type: res.cover.type,
+      Url:
+        res.cover.external?.url ||
+        res.cover.file?.url ||
+        '',
+      ExpiryTime: res.cover.file?.expiry_time || null,
+    }
+  }
+  
   let icon: FileObject | Emoji | null = null
   if (res.icon) {
     if (res.icon.type === 'emoji' && 'emoji' in res.icon) {
