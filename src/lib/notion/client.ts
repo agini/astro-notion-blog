@@ -58,9 +58,10 @@ import type {
 } from '../interfaces'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 //import { Client, APIResponseError } from '@notionhq/client'
-
+// Note: Notion API v2025-09-03 を使うように version を明示
 const client = new Client({
   auth: NOTION_API_SECRET,
+  notionVersion: "2025-09-03",
 })
 
 let postsCache: Post[] | null = null
