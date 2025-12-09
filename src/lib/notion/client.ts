@@ -101,7 +101,41 @@ export async function getAllPosts(): Promise<Post[]> {
     page_size: 100,
   }
 
- 
+  // --- Notion 2025-09-03 migration: use data_source instead of database_id query ---
+  // 1) retrieve container to get data_source_id
+  const container = await client.databases.retrieve({ database_id: DATABASE_ID } as any) as any
+  const dataSourceId = container.data_sources?.[0]?.id
+  if (!dataSourceId) {
+    throw new Error(`No data_source found for database ${DATABASE_ID}`)
+  }
+
+  let results: responses.PageObject[] = []
+  let cursor: string | undefined = undefined
+  while (true) {
+    const res = await retry(
+      async (bail) => {
+        try {
+          return (await client.dataSources.query({
+            data_source_id: dataSourceId,
+            filter: params.filter,
+            sorts: params.sorts,
+            page_size: params.page_size,
+            start_cursor: cursor,
+          } as any)) as responses.QueryDatabaseResponse
+        } catch (error: unknown) {
+          if (error instanceof APIResponseError) {
+            if (error.status && error.status >= 400 && error.status < 500) {
+              bail(error)
+            }
+          }
+          throw error
+        }
+      },
+      {
+        retries: numberOfRetry,
+      }
+    )
+
     results = results.concat(res.results)
 
     if (!res.has_more) {
