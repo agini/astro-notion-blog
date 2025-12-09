@@ -490,3 +490,40 @@ async function _getTableRows(blockId: string): Promise<TableRow[]> {
   return rows
 }
 
+/**
+ * ブロックを取得
+ * @param blockId NotionブロックID
+ */
+export async function _buildBlock(blockId: string): Promise<PartialBlockObjectResponse[]> {
+  const res = await notion.blocks.children.list({ block_id: blockId });
+  return res.results;
+}
+
+/**
+ * データベースのカラムを取得
+ * @param databaseId NotionデータベースID
+ */
+export async function _getColumns(databaseId: string) {
+  const res = await notion.databases.retrieve({ database_id: databaseId });
+  return res.properties;
+}
+
+/**
+ * データベースの行を取得
+ * @param databaseId NotionデータベースID
+ */
+export async function _getTableRows(databaseId: string) {
+  const res = await notion.databases.query({ database_id: databaseId });
+  return res.results as PageObjectResponse[];
+}
+
+// ----- 画像処理関数 -----
+
+/**
+ * 画像をダウンロードしてリサイズ・EXIF除去
+ * @param url 画像URL
+ * @param savePath 保存先パス
+ */
+export async function processNotionImage(url: string, savePath: string) {
+  return downloadAndProcessImage(url, savePath);
+}
