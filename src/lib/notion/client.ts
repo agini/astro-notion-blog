@@ -55,6 +55,30 @@ export async function getDatabase() {
   }
 }
 // ----------------------
+// 全記事取得
+// ----------------------
+export async function getAllPosts() {
+  try {
+    const res = await client.databases.query({
+      database_id: DATABASE_ID,
+      filter: {
+        and: [
+          { property: "Published", checkbox: { equals: true } },
+          { property: "Date", date: { on_or_before: new Date().toISOString() } },
+        ],
+      },
+      sorts: [{ property: "Date", direction: "descending" }],
+    });
+    return res.results;
+  } catch (err) {
+    if (err instanceof APIResponseError) {
+      console.error(`Notion API Error: ${err.status} - ${err.message}`);
+    }
+    throw err;
+  }
+}
+
+// ----------------------
 // POSTS / DATABASE
 // ----------------------
 export async function getAllPosts(): Promise<Post[]> {
