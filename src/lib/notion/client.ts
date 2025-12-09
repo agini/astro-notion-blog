@@ -18,7 +18,6 @@ import type * as requestParams from './request-params';
 import type {
   Database, Post, Block, Column, TableRow, TableCell, RichText, Annotation, FileObject, Emoji
 } from '../interfaces';
-import { downloadAndProcessImage } from './notionImages';
 
 // ----------------------
 // Notion クライアント
