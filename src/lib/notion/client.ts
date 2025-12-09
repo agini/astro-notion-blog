@@ -70,9 +70,7 @@ let dbCache: Database | null = null
 const numberOfRetry = 2
 
 export async function getAllPosts(): Promise<Post[]> {
-  if (postsCache !== null) {
-    return Promise.resolve(postsCache)
-  }
+  if (postsCache !== null) return postsCache
 
   const params: requestParams.QueryDatabase = {
     database_id: DATABASE_ID,
