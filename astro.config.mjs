@@ -38,7 +38,7 @@ export default defineConfig({
   base: BASE_PATH,
   integrations: [
     icon(),
-    //CoverImageDownloader(),
+    CoverImageDownloader(),
     CustomIconDownloader(),
     FeaturedImageDownloader(),
     PublicNotionCopier(),
