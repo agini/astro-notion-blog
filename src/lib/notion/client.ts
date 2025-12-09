@@ -15,6 +15,19 @@ import type {
 } from '../interfaces';
 
 // ----------------------
+// 環境変数チェック
+// ----------------------
+const NOTION_API_SECRET = process.env.NOTION_API_SECRET;
+const DATABASE_ID = process.env.DATABASE_ID;
+
+if (!NOTION_API_SECRET) {
+  throw new Error("Environment variable NOTION_API_SECRET is not set.");
+}
+
+if (!DATABASE_ID) {
+  throw new Error("Environment variable DATABASE_ID is not set.");
+}
+// ----------------------
 // Notion クライアント
 // ----------------------
 const client = new Client({ auth: NOTION_API_SECRET, notionVersion: "2025-09-03" });
