@@ -72,84 +72,71 @@ const numberOfRetry = 2
 export async function getAllPosts(): Promise<Post[]> {
   if (postsCache !== null) return postsCache
 
-  const params: requestParams.QueryDatabase = {
-    database_id: DATABASE_ID,
-    filter: {
-      and: [
-        {
-          property: 'Published',
-          checkbox: {
-            equals: true,
-          },
-        },
-        {
-          property: 'Date',
-          date: {
-            on_or_before: new Date().toISOString(),
-          },
-        },
-      ],
-    },
-    sorts: [
-      {
-        property: 'Date',
-        direction: 'descending',
-      },
-    ],
-    page_size: 100,
+   // --- 1) まず database を取得して data_source_id を得る ---
+  const db = await client.databases.retrieve({ database_id: DATABASE_ID }) as any
+
+  const dataSourceId =
+    db.data_sources?.[0]?.id ??
+    db.parent?.data_source_id ??
+    null
+
+  if (!dataSourceId) {
+    throw new Error(`❌ No data_source_id found for database: ${DATABASE_ID}`)
   }
 
-  // --- Notion 2025-09-03 migration: use data_source instead of database_id query ---
-  // 1) retrieve container to get data_source_id
-  const container = await client.databases.retrieve({ database_id: DATABASE_ID } as any) as any
-  const dataSourceId = container.data_sources?.[0]?.id
-  if (!dataSourceId) {
-    throw new Error(`No data_source found for database ${DATABASE_ID}`)
+  // --- 2) Notion API v2025-09-03 形式で query ---
+  const filter = {
+    and: [
+      {
+        property: 'Published',
+        checkbox: { equals: true },
+      },
+      {
+        property: 'Date',
+        date: { on_or_before: new Date().toISOString() },
+      },
+    ],
   }
+
+  const sorts = [
+    {
+      property: 'Date',
+      direction: 'descending',
+    },
+  ]
 
   let results: responses.PageObject[] = []
   let cursor: string | undefined = undefined
+
   while (true) {
-    const res = await retry(
-      async (bail) => {
-        try {
-          return (await client.dataSources.query({
-            data_source_id: dataSourceId,
-            filter: params.filter,
-            sorts: params.sorts,
-            page_size: params.page_size,
-            start_cursor: cursor,
-          } as any)) as responses.QueryDatabaseResponse
-        } catch (error: unknown) {
-          if (error instanceof APIResponseError) {
-            if (error.status && error.status >= 400 && error.status < 500) {
-              bail(error)
-            }
-          }
-          throw error
+    const res = await retry(async (bail) => {
+      try {
+        return await client.dataSources.query({
+          data_source_id: dataSourceId,
+          filter,
+          sorts,
+          page_size: 100,
+          start_cursor: cursor,
+        } as any)
+      } catch (err) {
+        if (err instanceof APIResponseError && err.status >= 400 && err.status < 500) {
+          bail(err)
         }
-      },
-      {
-        retries: numberOfRetry,
+        throw err
       }
-    )
+    }, { retries: numberOfRetry })
 
     results = results.concat(res.results)
 
-    if (!res.has_more || !res.next_cursor) {
-      break
-    }
-
-      cursor = res.next_cursor as string
-  }
-  // --- end migration patch ---
-    
-    params['start_cursor'] = res.next_cursor as string
+    if (!res.has_more || !res.next_cursor) break
+    cursor = res.next_cursor
   }
 
+  // --- 3) filter & build objects ---
   postsCache = results
     .filter((pageObject) => _validPageObject(pageObject))
     .map((pageObject) => _buildPost(pageObject))
+
   return postsCache
 }
 
