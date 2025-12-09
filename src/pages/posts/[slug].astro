@@ -1,5 +1,4 @@
 ---
-/* ⭐ これをファイルの最上部に1回だけ置く */
 const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
 
 import * as interfaces from '../../lib/interfaces.ts'
@@ -18,7 +17,7 @@ import styles from '../../styles/blog.module.css'
  *  getStaticPaths：投稿スラッグの一覧
  * -------------------------------------------------- */
 export async function getStaticPaths() {
-  const res = await fetch(`${API_BASE}/posts`);
+  const res = await fetch(API_BASE + "/posts");
   const data = await res.json();
 
   return data.results.map((post) => ({
@@ -29,26 +28,26 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 
 /* --------------------------------------------------
- *  投稿本体
+ * 投稿本体
  * -------------------------------------------------- */
-const listRes = await fetch(`${API_BASE}/posts`);
+const listRes = await fetch(API_BASE + "/posts");
 const listJson = await listRes.json();
 const allPosts = listJson.results;
 
 const post = allPosts.find((p) => p.slug === slug);
 if (!post) {
-  throw new Error(`Post not found: slug=${slug}`);
+  throw new Error("Post not found: slug=" + slug);
 }
 
 /* ブロック内容 */
-const detailRes = await fetch(`${API_BASE}/post/${post.id}`);
+const detailRes = await fetch(API_BASE + "/post/" + post.id);
 const detailJson = await detailRes.json();
 const blocks = detailJson.blocks || [];
 
 /* その他情報 */
-const ranked = await (await fetch(`${API_BASE}/ranked-posts`)).json();
-const tags = await (await fetch(`${API_BASE}/tags`)).json();
-const latest = await (await fetch(`${API_BASE}/posts`)).json();
+const ranked = await (await fetch(API_BASE + "/ranked-posts")).json();
+const tags = await (await fetch(API_BASE + "/tags")).json();
+const latest = await (await fetch(API_BASE + "/posts")).json();
 
 /* Prev / Next */
 const idx = allPosts.findIndex((p) => p.slug === slug);
