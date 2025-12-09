@@ -1,6 +1,5 @@
 ---
 import { PUBLIC_GA_TRACKING_ID, ENABLE_LIGHTBOX } from '../server-constants.ts'
-import { getDatabase } from '../lib/notion/client.ts'
 import { getNavLink, getStaticFilePath, filePath } from '../lib/blog-helpers.ts'
 import '../styles/syntax-coloring.css'
 import GoogleAnalytics from '../components/GoogleAnalytics.astro'
@@ -12,11 +11,23 @@ export interface Props {
   description: string
   path: string
   ogImage: string
+  database: any   // ← Layout に database を渡す
 }
 
-const { title = '', description = '', path = '/', ogImage = '' } = Astro.props
+// Layout では database が props 経由で受け取れる前提
 
-const database = await getDatabase()
+const {
+  title = '',
+  description = '',
+  path = '/',
+  ogImage = '',
+  database = {
+    Title: 'My Blog',
+    Description: '',
+    Cover: null,
+    Icon: null,
+  }
+} = Astro.props
 
 const siteTitle = title ? `${title} - ${database.Title}` : database.Title
 const siteDescription = description ? description : database.Description
