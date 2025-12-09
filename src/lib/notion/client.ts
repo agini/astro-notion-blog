@@ -62,6 +62,9 @@ import { Client } from "@notionhq/client";
 import type { PageObjectResponse, PartialBlockObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { downloadAndProcessImage } from "./notionImages"; // 画像処理関数を別ファイルで管理
 
+// Notionクライアント初期化
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
+
 // --- Notion API 2025 ---
 const client = new Client({
   auth: NOTION_API_SECRET,
