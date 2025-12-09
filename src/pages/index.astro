@@ -1,6 +1,4 @@
 ---
-console.log("API_BASE =", import.meta.env.PUBLIC_API_BASE_URL);
-
 import Layout from '../layouts/Layout.astro';
 import NoContents from '../components/NoContents.astro';
 import PostDate from '../components/PostDate.astro';
@@ -14,21 +12,19 @@ import BlogPostsLink from '../components/BlogPostsLink.astro';
 import BlogTagsLink from '../components/BlogTagsLink.astro';
 import styles from '../styles/blog.module.css';
 
-// Cloudflare Workers API
 const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
 
-// 投稿一覧を取得
-const posts = await fetch(`${API_BASE}/posts`).then((res) => res.json());
+console.log("API_BASE =", API_BASE);
 
-// Layout に渡す用のダミー DB 情報
+const posts = await fetch(`${API_BASE}/posts`).then(res => res.json());
+
 const database = {
   Title: "My Blog",
   Description: "Welcome to my blog",
   Cover: null,
-  Icon: null
+  Icon: null,
 };
 
-// 未実装 API 用の空データ
 const rankedPosts = [];
 const tags = [];
 const numberOfPages = 1;

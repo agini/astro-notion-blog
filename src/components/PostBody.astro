@@ -1,20 +1,69 @@
 ---
-import { Block } from '../lib/interfaces.ts'
-import NotionBlocks from './NotionBlocks.astro'
+const { blocks } = Astro.props;
 
-export interface Props {
-  blocks: Block[]
+// rich_text の配列をプレーン HTML に変換する関数
+function renderRichText(richTextArray) {
+  if (!richTextArray) return "";
+
+  return richTextArray
+    .map(text => {
+      const content = text.plain_text || "";
+      const ann = text.annotations || {};
+
+      let html = content;
+
+      if (ann.bold) html = `<strong>${html}</strong>`;
+      if (ann.italic) html = `<em>${html}</em>`;
+      if (ann.underline) html = `<u>${html}</u>`;
+      if (ann.strikethrough) html = `<s>${html}</s>`;
+      if (ann.code) html = `<code>${html}</code>`;
+
+      return html;
+    })
+    .join("");
 }
 
-const { blocks } = Astro.props
+// ブロック1つを HTML に変換
+function renderBlock(block) {
+  const type = block.type;
+
+  switch (type) {
+    case "heading_1":
+      return `<h1>${renderRichText(block.heading_1.rich_text)}</h1>`;
+    case "heading_2":
+      return `<h2>${renderRichText(block.heading_2.rich_text)}</h2>`;
+    case "heading_3":
+      return `<h3>${renderRichText(block.heading_3.rich_text)}</h3>`;
+
+    case "paragraph":
+      return `<p>${renderRichText(block.paragraph.rich_text)}</p>`;
+
+    case "bulleted_list_item":
+      return `<ul><li>${renderRichText(block.bulleted_list_item.rich_text)}</li></ul>`;
+
+    default:
+      return "";
+  }
+}
 ---
 
 <div class="post-body">
-  <NotionBlocks blocks={blocks} isRoot={true} />
+  {
+    blocks.map(block => (
+      <Fragment set:html={renderBlock(block)} />
+    ))
+  }
 </div>
 
 <style>
-  .post-body {
-    padding: 0.5rem 0;
-  }
+.post-body p {
+  margin: 1rem 0;
+  line-height: 1.7;
+}
+.post-body h2 {
+  margin-top: 2rem;
+}
+.post-body ul {
+  padding-left: 1.2em;
+}
 </style>
