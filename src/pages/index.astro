@@ -1,11 +1,4 @@
 ---
-import { NUMBER_OF_POSTS_PER_PAGE } from '../server-constants.ts'
-import {
-  getPosts,
-  getRankedPosts,
-  getAllTags,
-  getNumberOfPages,
-} from '../lib/notion/client.ts'
 import Layout from '../layouts/Layout.astro'
 import NoContents from '../components/NoContents.astro'
 import PostDate from '../components/PostDate.astro'
@@ -19,22 +12,35 @@ import BlogPostsLink from '../components/BlogPostsLink.astro'
 import BlogTagsLink from '../components/BlogTagsLink.astro'
 import styles from '../styles/blog.module.css'
 
-const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
-  getPosts(NUMBER_OF_POSTS_PER_PAGE),
-  getRankedPosts(),
-  getAllTags(),
-  getNumberOfPages(),
-])
+// Cloudflare Workers の API を叩く
+// 例: https://<your-worker>.workers.dev/posts
+const API_BASE = import.meta.env.PUBLIC_API_BASE_URL
+
+// Notion Database → 記事一覧
+const posts = await fetch(`${API_BASE}/posts`).then((res) => res.json())
+
+// DB全体のメタデータとして扱う（Layout で必要）
+const database = {
+  Title: "My Blog",
+  Description: "Welcome to my blog",
+  Cover: null,
+  Icon: null,
+}
+
+// まだ Workers に "ranked posts" や "tags" API が無いので空扱い
+const rankedPosts = []
+const tags = []
+const numberOfPages = 1
 ---
 
-<Layout>
+<Layout database={database}>
   <div slot="main" class={styles.main}>
     {
-      posts.length === 0 ? (
-        <NoContents contents={posts} />
+      posts.results.length === 0 ? (
+        <NoContents contents={posts.results} />
       ) : (
-        posts.map((post) => (
-          <div class={styles.post} key={post.Slug}>
+        posts.results.map((post) => (
+          <div class={styles.post} key={post.id}>
             <PostDate post={post} />
             <PostTags post={post} />
             <PostTitle post={post} />
