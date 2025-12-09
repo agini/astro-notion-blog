@@ -1,5 +1,6 @@
 ---
 console.log("API_BASE =", import.meta.env.PUBLIC_API_BASE_URL);
+
 import Layout from '../layouts/Layout.astro'
 import NoContents from '../components/NoContents.astro'
 import PostDate from '../components/PostDate.astro'
@@ -13,25 +14,24 @@ import BlogPostsLink from '../components/BlogPostsLink.astro'
 import BlogTagsLink from '../components/BlogTagsLink.astro'
 import styles from '../styles/blog.module.css'
 
-// Cloudflare Workers の API を叩く
-// 例: https://<your-worker>.workers.dev/posts
-const API_BASE = import.meta.env.PUBLIC_API_BASE_URL
+// Cloudflare Workers の API
+const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
 
 // Notion Database → 記事一覧
-const posts = await fetch(`${API_BASE}/posts`).then((res) => res.json())
+const posts = await fetch(`${API_BASE}/posts`).then((res) => res.json());
 
-// DB全体のメタデータとして扱う（Layout で必要）
+// Layout 用のメタデータ
 const database = {
   Title: "My Blog",
   Description: "Welcome to my blog",
   Cover: null,
-  Icon: null,
-}
+  Icon: null
+};
 
-// まだ Workers に "ranked posts" や "tags" API が無いので空扱い
-const rankedPosts = []
-const tags = []
-const numberOfPages = 1
+// まだ Workers 未実装なので空
+const rankedPosts = [];
+const tags = [];
+const numberOfPages = 1;
 ---
 
 <Layout database={database}>
