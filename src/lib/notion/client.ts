@@ -4,6 +4,8 @@ import axios from 'axios'
 // @ts-ignore
 import sharp from 'sharp'
 import retry from 'async-retry'
+import { Client, APIResponseError } from '@notionhq/client'
+
 import ExifTransformer from 'exif-be-gone'
 import {
   NOTION_API_SECRET,
