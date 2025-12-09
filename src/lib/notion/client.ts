@@ -1,18 +1,11 @@
 import fs from 'node:fs';
 import { Client, APIResponseError } from '@notionhq/client';
 import retry from 'async-retry';
-import { downloadAndProcessImage } from './image-utils'; // ← 画像処理関数を import
-
-import {
-  NOTION_API_SECRET,
-  DATABASE_ID,
-} from '../../server-constants';
+import { downloadAndProcessImage } from './image-utils'; // client.ts と同じディレクトリに image-utils.ts がある前提
 
 import type * as responses from './responses';
 import type * as requestParams from './request-params';
-import type {
-  Database, Post, Block, Column, TableRow, TableCell
-} from '../interfaces';
+import type { Database, Post, Block, Column, TableRow, TableCell } from '../interfaces';
 
 // ----------------------
 // 環境変数チェック
@@ -27,6 +20,7 @@ if (!NOTION_API_SECRET) {
 if (!DATABASE_ID) {
   throw new Error("Environment variable DATABASE_ID is not set.");
 }
+
 // ----------------------
 // Notion クライアント
 // ----------------------
@@ -42,34 +36,16 @@ let postsCache: Post[] | null = null;
 let dbCache: Database | null = null;
 const numberOfRetry = 2;
 
-// --- データベース取得 ---
-export async function getDatabase() {
+// ----------------------
+// データベース取得
+// ----------------------
+export async function getDatabase(): Promise<Database> {
+  if (dbCache) return dbCache;
+
   try {
     const res = await client.databases.retrieve({ database_id: DATABASE_ID });
-    return res;
-  } catch (err) {
-    if (err instanceof APIResponseError) {
-      console.error(`Notion API Error: ${err.status} - ${err.message}`);
-    }
-    throw err;
-  }
-}
-// ----------------------
-// 全記事取得
-// ----------------------
-export async function getAllPosts() {
-  try {
-    const res = await client.databases.query({
-      database_id: DATABASE_ID,
-      filter: {
-        and: [
-          { property: "Published", checkbox: { equals: true } },
-          { property: "Date", date: { on_or_before: new Date().toISOString() } },
-        ],
-      },
-      sorts: [{ property: "Date", direction: "descending" }],
-    });
-    return res.results;
+    dbCache = res as Database;
+    return dbCache;
   } catch (err) {
     if (err instanceof APIResponseError) {
       console.error(`Notion API Error: ${err.status} - ${err.message}`);
@@ -79,7 +55,7 @@ export async function getAllPosts() {
 }
 
 // ----------------------
-// POSTS / DATABASE
+// 全記事取得
 // ----------------------
 export async function getAllPosts(): Promise<Post[]> {
   if (postsCache) return postsCache;
@@ -120,6 +96,9 @@ export async function getAllPosts(): Promise<Post[]> {
   return postsCache;
 }
 
+// ----------------------
+// Slug で記事取得
+// ----------------------
 export async function getPostBySlug(slug: string) {
   return (await getAllPosts()).find(p => p.Slug === slug) || null;
 }
