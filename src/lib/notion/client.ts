@@ -1,6 +1,7 @@
 import fs, { createWriteStream } from 'node:fs'
 import { pipeline } from 'node:stream/promises'
 import axios from 'axios'
+// @ts-ignore
 import sharp from 'sharp'
 import retry from 'async-retry'
 import ExifTransformer from 'exif-be-gone'
