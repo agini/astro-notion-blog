@@ -15,3 +15,5 @@ export const REQUEST_TIMEOUT_MS = parseInt(
   10
 )
 export const ENABLE_LIGHTBOX = import.meta.env.ENABLE_LIGHTBOX
+
+export const PUBLIC_API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL
