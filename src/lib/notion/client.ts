@@ -138,7 +138,7 @@ export async function getAllPosts(): Promise<Post[]> {
 
     results = results.concat(res.results)
 
-    if (!res.has_more) {
+    if (!res.has_more || !res.next_cursor) {
       break
     }
 
