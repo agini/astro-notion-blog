@@ -142,6 +142,10 @@ export async function getAllPosts(): Promise<Post[]> {
       break
     }
 
+      cursor = res.next_cursor as string
+  }
+  // --- end migration patch ---
+    
     params['start_cursor'] = res.next_cursor as string
   }
 
