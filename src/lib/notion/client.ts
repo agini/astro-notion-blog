@@ -101,28 +101,7 @@ export async function getAllPosts(): Promise<Post[]> {
     page_size: 100,
   }
 
-  let results: responses.PageObject[] = []
-  while (true) {
-    const res = await retry(
-      async (bail) => {
-        try {
-          return (await client.databases.query(
-            params as any // eslint-disable-line @typescript-eslint/no-explicit-any
-          )) as responses.QueryDatabaseResponse
-        } catch (error: unknown) {
-          if (error instanceof APIResponseError) {
-            if (error.status && error.status >= 400 && error.status < 500) {
-              bail(error)
-            }
-          }
-          throw error
-        }
-      },
-      {
-        retries: numberOfRetry,
-      }
-    )
-
+ 
     results = results.concat(res.results)
 
     if (!res.has_more) {
