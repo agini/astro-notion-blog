@@ -362,3 +362,123 @@ async function _getSyncedBlockChildren(block: Block): Promise<Block[]> {
 
 async function _getColumns(blockId: string): Promise<Column[]> { /* ... */ return [] }
 async function _getTableRows(blockId: string): Promise<TableRow[]> { /* ... */ return [] }
+
+// --- _buildBlock ---
+function _buildBlock(blockObject: responses.BlockObject): Block {
+  const block: Block = { Id: blockObject.id, Type: blockObject.type, HasChildren: blockObject.has_children }
+
+  switch (blockObject.type) {
+    case 'paragraph':
+      block.Paragraph = {
+        RichTexts: blockObject.paragraph.rich_text.map(_buildRichText),
+        Children: []
+      }
+      break
+    case 'heading_1':
+      block.Heading1 = { RichTexts: blockObject.heading_1.rich_text.map(_buildRichText), Children: [] }
+      break
+    case 'heading_2':
+      block.Heading2 = { RichTexts: blockObject.heading_2.rich_text.map(_buildRichText), Children: [] }
+      break
+    case 'heading_3':
+      block.Heading3 = { RichTexts: blockObject.heading_3.rich_text.map(_buildRichText), Children: [] }
+      break
+    case 'bulleted_list_item':
+      block.BulletedListItem = { RichTexts: blockObject.bulleted_list_item.rich_text.map(_buildRichText), Children: [] }
+      break
+    case 'numbered_list_item':
+      block.NumberedListItem = { RichTexts: blockObject.numbered_list_item.rich_text.map(_buildRichText), Children: [] }
+      break
+    case 'to_do':
+      block.ToDo = {
+        RichTexts: blockObject.to_do.rich_text.map(_buildRichText),
+        Checked: blockObject.to_do.checked,
+        Children: []
+      }
+      break
+    case 'toggle':
+      block.Toggle = { RichTexts: blockObject.toggle.rich_text.map(_buildRichText), Children: [] }
+      break
+    case 'synced_block':
+      block.SyncedBlock = {
+        Children: [],
+        SyncedFrom: blockObject.synced_block.synced_from ? { BlockId: blockObject.synced_block.synced_from.block_id } : null
+      }
+      break
+    case 'column_list':
+      block.ColumnList = { Columns: [] }
+      break
+    case 'table':
+      block.Table = { Rows: [] }
+      break
+    case 'image':
+      block.Image = {
+        Type: blockObject.image.type,
+        Url: blockObject.image.external?.url || blockObject.image.file?.url || '',
+        Caption: blockObject.image.caption.map(_buildRichText)
+      }
+      break
+    case 'code':
+      block.Code = {
+        RichTexts: blockObject.code.rich_text.map(_buildRichText),
+        Language: blockObject.code.language
+      }
+      break
+    case 'quote':
+      block.Quote = { RichTexts: blockObject.quote.rich_text.map(_buildRichText) }
+      break
+    case 'callout':
+      block.Callout = {
+        RichTexts: blockObject.callout.rich_text.map(_buildRichText),
+        Icon: blockObject.callout.icon?.type === 'emoji' ? { Emoji: blockObject.callout.icon.emoji } : undefined
+      }
+      break
+    case 'embed':
+      block.Embed = { Url: blockObject.embed.url }
+      break
+    case 'video':
+      block.Video = { Url: blockObject.video.external?.url || blockObject.video.file?.url || '' }
+      break
+    case 'file':
+      block.File = { Url: blockObject.file.external?.url || blockObject.file.file?.url || '' }
+      break
+    case 'bookmark':
+      block.Bookmark = { Url: blockObject.bookmark.url }
+      break
+    case 'link_preview':
+      block.LinkPreview = { Url: blockObject.link_preview.url }
+      break
+    case 'table_of_contents':
+      block.TableOfContents = {}
+      break
+    default:
+      break
+  }
+
+  return block
+}
+
+// --- _getColumns ---
+async function _getColumns(blockId: string): Promise<Column[]> {
+  const children = await getAllBlocksByBlockId(blockId)
+  const columns: Column[] = []
+  for (const col of children) {
+    columns.push({ Blocks: await getAllBlocksByBlockId(col.Id) })
+  }
+  return columns
+}
+
+// --- _getTableRows ---
+async function _getTableRows(blockId: string): Promise<TableRow[]> {
+  const rowsBlocks = await getAllBlocksByBlockId(blockId)
+  const rows: TableRow[] = []
+  for (const rowBlock of rowsBlocks) {
+    const cells: TableCell[] = []
+    for (const cell of rowBlock.TableRow?.Cells || []) {
+      cells.push({ Blocks: await getAllBlocksByBlockId(cell.Id) })
+    }
+    rows.push({ Cells: cells })
+  }
+  return rows
+}
+
