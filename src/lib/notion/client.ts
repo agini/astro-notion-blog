@@ -1,45 +1,58 @@
-const WORKER_ENDPOINT = "https://agi-gamerblog.jaredagini22.workers.dev";
+const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
 
-// 投稿一覧
-export async function getPosts(limit: number) {
-  const res = await fetch(`${WORKER_ENDPOINT}/posts?limit=${limit}`);
-  if (!res.ok) throw new Error("Failed to fetch posts");
-  return res.json();
+/**
+ * 全ての投稿を取得
+ */
+export async function getAllPosts() {
+  const res = await fetch(`${API_BASE}/posts`);
+  const json = await res.json();
+  return json.results || [];
 }
 
-// ランキング投稿（とりあえず最新 5 件などにする）
+/**
+ * スラッグから投稿を取得
+ */
+export async function getPostBySlug(slug: string) {
+  const res = await fetch(`${API_BASE}/post-by-slug/${slug}`);
+  const json = await res.json();
+  return json.post || null;
+}
+
+/**
+ * 最新投稿〇件取得
+ */
+export async function getPosts(limit = 5) {
+  const res = await fetch(`${API_BASE}/posts?limit=${limit}`);
+  const json = await res.json();
+  return json.results || [];
+}
+
+/**
+ * 人気順（ランキング）投稿
+ */
 export async function getRankedPosts() {
-  const res = await fetch(`${WORKER_ENDPOINT}/posts?limit=5`);
-  if (!res.ok) throw new Error("Failed to fetch ranked posts");
-  return res.json();
+  const res = await fetch(`${API_BASE}/posts/ranked`);
+  const json = await res.json();
+  return json.results || [];
 }
 
-// タグ一覧（Cloudflare Worker 側で tags API が無いなら後で作る）
+/**
+ * タグから投稿取得
+ */
+export async function getPostsByTag(tag: string, limit = 6) {
+  if (!tag) return [];
+  const res = await fetch(
+    `${API_BASE}/posts-by-tag/${encodeURIComponent(tag)}?limit=${limit}`
+  );
+  const json = await res.json();
+  return json.results || [];
+}
+
+/**
+ * 全タグ取得
+ */
 export async function getAllTags() {
-  const res = await fetch(`${WORKER_ENDPOINT}/tags`);
-  if (!res.ok) return [];
-  return res.json();
-}
-
-// ページ数
-export async function getNumberOfPages() {
-  const res = await fetch(`${WORKER_ENDPOINT}/posts/count`);
-  if (!res.ok) return 1;
-
-  const count = await res.json();
-  return Math.ceil(count / 10);
-}
-
-// 個別記事
-export async function getPost(id: string) {
-  const res = await fetch(`${WORKER_ENDPOINT}/post?id=${id}`);
-  if (!res.ok) throw new Error("Failed to fetch post");
-  return res.json();
-}
-
-// ブロック
-export async function getBlocks(id: string) {
-  const res = await fetch(`${WORKER_ENDPOINT}/blocks?id=${id}`);
-  if (!res.ok) throw new Error("Failed to fetch blocks");
-  return res.json();
+  const res = await fetch(`${API_BASE}/tags`);
+  const json = await res.json();
+  return json.tags || [];
 }
