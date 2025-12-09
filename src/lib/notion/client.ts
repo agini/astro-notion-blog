@@ -43,41 +43,17 @@ let dbCache: Database | null = null;
 const numberOfRetry = 2;
 
 // --- データベース取得 ---
-export async function getDatabase(): Promise<Database> {
-  if (dbCache) return dbCache;
-
-  const res = await retry(async (bail) => {
-    try {
-      return await client.databases.retrieve({ database_id: DATABASE_ID } as any);
-    } catch (err) {
-      if (err instanceof APIResponseError && err.status >= 400 && err.status < 500) bail(err);
-      throw err;
+export async function getDatabase() {
+  try {
+    const res = await client.databases.retrieve({ database_id: DATABASE_ID });
+    return res;
+  } catch (err) {
+    if (err instanceof APIResponseError) {
+      console.error(`Notion API Error: ${err.status} - ${err.message}`);
     }
-  }, { retries: numberOfRetry }) as any;
-
-  const cover = res.cover ? {
-    Type: res.cover.type,
-    Url: res.cover.external?.url || res.cover.file?.url || "",
-    ExpiryTime: res.cover.file?.expiry_time || null,
-  } : null;
-
-  let icon: any = null;
-  if (res.icon) {
-    if (res.icon.type === "emoji") icon = { Type: "emoji", Emoji: res.icon.emoji };
-    else if (res.icon.type === "external") icon = { Type: "external", Url: res.icon.external?.url || "" };
-    else if (res.icon.type === "file") icon = { Type: "file", Url: res.icon.file?.url || "" };
+    throw err;
   }
-
-  dbCache = {
-    Title: res.title.map((r: any) => r.plain_text).join(""),
-    Description: res.description.map((r: any) => r.plain_text).join(""),
-    Icon: icon,
-    Cover: cover,
-  };
-
-  return dbCache;
 }
-
 // ----------------------
 // POSTS / DATABASE
 // ----------------------
