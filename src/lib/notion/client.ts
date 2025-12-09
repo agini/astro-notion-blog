@@ -30,7 +30,10 @@ if (!DATABASE_ID) {
 // ----------------------
 // Notion クライアント
 // ----------------------
-const client = new Client({ auth: NOTION_API_SECRET, notionVersion: "2025-09-03" });
+export const client = new Client({
+  auth: NOTION_API_SECRET,
+  notionVersion: "2025-09-03",
+});
 
 // ----------------------
 // キャッシュ
