@@ -1,28 +1,22 @@
-import fs, { createWriteStream } from 'node:fs';
-import { pipeline } from 'node:stream/promises';
-import axios from 'axios';
-import sharp from 'sharp';
-import retry from 'async-retry';
+import fs from 'node:fs';
 import { Client, APIResponseError } from '@notionhq/client';
-import ExifTransformer from 'exif-be-gone';
+import retry from 'async-retry';
+import { downloadAndProcessImage } from './image-utils'; // ← 画像処理関数を import
 
 import {
   NOTION_API_SECRET,
   DATABASE_ID,
-  NUMBER_OF_POSTS_PER_PAGE,
-  REQUEST_TIMEOUT_MS,
 } from '../../server-constants';
 
 import type * as responses from './responses';
 import type * as requestParams from './request-params';
 import type {
-  Database, Post, Block, Column, TableRow, TableCell, RichText, Annotation, FileObject, Emoji
+  Database, Post, Block, Column, TableRow, TableCell
 } from '../interfaces';
 
 // ----------------------
 // Notion クライアント
 // ----------------------
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const client = new Client({ auth: NOTION_API_SECRET, notionVersion: "2025-09-03" });
 
 // ----------------------
@@ -31,7 +25,6 @@ const client = new Client({ auth: NOTION_API_SECRET, notionVersion: "2025-09-03"
 let postsCache: Post[] | null = null;
 let dbCache: Database | null = null;
 const numberOfRetry = 2;
-
 
 // --- データベース取得 ---
 export async function getDatabase(): Promise<Database> {
@@ -46,15 +39,13 @@ export async function getDatabase(): Promise<Database> {
     }
   }, { retries: numberOfRetry }) as any;
 
-  let cover: FileObject | null = res.cover
-    ? {
-        Type: res.cover.type,
-        Url: res.cover.external?.url || res.cover.file?.url || "",
-        ExpiryTime: res.cover.file?.expiry_time || null,
-      }
-    : null;
+  const cover = res.cover ? {
+    Type: res.cover.type,
+    Url: res.cover.external?.url || res.cover.file?.url || "",
+    ExpiryTime: res.cover.file?.expiry_time || null,
+  } : null;
 
-  let icon: FileObject | Emoji | null = null;
+  let icon: any = null;
   if (res.icon) {
     if (res.icon.type === "emoji") icon = { Type: "emoji", Emoji: res.icon.emoji };
     else if (res.icon.type === "external") icon = { Type: "external", Url: res.icon.external?.url || "" };
@@ -70,13 +61,12 @@ export async function getDatabase(): Promise<Database> {
 
   return dbCache;
 }
+
 // ----------------------
 // POSTS / DATABASE
 // ----------------------
 export async function getAllPosts(): Promise<Post[]> {
   if (postsCache) return postsCache;
-
-  const db = await client.databases.retrieve({ database_id: DATABASE_ID }) as any;
 
   const filter = {
     and: [
@@ -167,17 +157,44 @@ export async function getAllBlocksByBlockId(blockId: string): Promise<Block[]> {
   return blocks;
 }
 
-// 内部処理用
+// ----------------------
+// 画像処理
+// ----------------------
+export async function processNotionImage(url: string, savePath: string) {
+  return downloadAndProcessImage(url, savePath);
+}
+
+// ----------------------
+// INTERNAL HELPERS
+// ----------------------
+function _validPageObject(pageObject: responses.PageObject) {
+  const prop = pageObject.properties;
+  return !!prop.Page.title?.length && !!prop.Slug.rich_text?.length && !!prop.Date.date;
+}
+
+function _buildPost(pageObject: responses.PageObject): Post {
+  const prop = pageObject.properties;
+  return {
+    PageId: pageObject.id,
+    Title: prop.Page.title?.map((r:any)=>r.plain_text).join('')||'',
+    Slug: prop.Slug.rich_text?.map((r:any)=>r.plain_text).join('')||'',
+    Date: prop.Date.date?.start||'',
+    Tags: prop.Tags.multi_select||[],
+    Icon: null,
+    Cover: null,
+    FeaturedImage: null,
+    Rank: prop.Rank?.number || 0,
+    Excerpt: prop.Excerpt?.rich_text?.map((r:any)=>r.plain_text).join('') || ''
+  };
+}
+
 function _buildBlockObject(blockObject: responses.BlockObject): Block {
-  const block: Block = { Id: blockObject.id, Type: blockObject.type, HasChildren: blockObject.has_children };
-  // 必要に応じて block.type ごとの mapping を追加
-  return block;
+  return { Id: blockObject.id, Type: blockObject.type, HasChildren: blockObject.has_children };
 }
 
 async function _getSyncedBlockChildren(block: Block): Promise<Block[]> {
   if (block.SyncedBlock?.SyncedFrom?.BlockId) {
-    const original = await getAllBlocksByBlockId(block.SyncedBlock.SyncedFrom.BlockId);
-    return original;
+    return await getAllBlocksByBlockId(block.SyncedBlock.SyncedFrom.BlockId);
   }
   return [];
 }
@@ -200,35 +217,4 @@ async function _getTableRowsFromBlock(blockId: string): Promise<TableRow[]> {
   }
 
   return rows;
-}
-
-// ----------------------
-// 画像処理
-// ----------------------
-export async function processNotionImage(url: string, savePath: string) {
-  return downloadAndProcessImage(url, savePath);
-}
-
-// ----------------------
-// HELPER
-// ----------------------
-function _validPageObject(pageObject: responses.PageObject) {
-  const prop = pageObject.properties;
-  return !!prop.Page.title?.length && !!prop.Slug.rich_text?.length && !!prop.Date.date;
-}
-
-function _buildPost(pageObject: responses.PageObject): Post {
-  const prop = pageObject.properties;
-  return {
-    PageId: pageObject.id,
-    Title: prop.Page.title?.map((r:any)=>r.plain_text).join('')||'',
-    Slug: prop.Slug.rich_text?.map((r:any)=>r.plain_text).join('')||'',
-    Date: prop.Date.date?.start||'',
-    Tags: prop.Tags.multi_select||[],
-    Icon: null,
-    Cover: null,
-    FeaturedImage: null,
-    Rank: prop.Rank?.number || 0,
-    Excerpt: prop.Excerpt?.rich_text?.map((r:any)=>r.plain_text).join('') || ''
-  };
 }
