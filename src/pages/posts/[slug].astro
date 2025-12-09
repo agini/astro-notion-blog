@@ -6,16 +6,13 @@ import {
   getRankedPosts,
   getPostBySlug,
   getPostsByTag,
-  getBlock,
   getAllTags,
-  getAllBlocksByBlockId,
-  downloadFile,
 } from '../../lib/notion/client.ts'
+
 import {
   getPostLink,
-  filePath,
-  extractTargetBlocks,
 } from '../../lib/blog-helpers.ts'
+
 import Layout from '../../layouts/Layout.astro'
 import PostDate from '../../components/PostDate.astro'
 import PostTags from '../../components/PostTags.astro'
@@ -24,74 +21,48 @@ import PostBody from '../../components/PostBody.astro'
 import PostRelativeLink from '../../components/PostRelativeLink.astro'
 import BlogPostsLink from '../../components/BlogPostsLink.astro'
 import BlogTagsLink from '../../components/BlogTagsLink.astro'
+import PostFeaturedImage from '../../components/PostFeaturedImage.astro'
 import styles from '../../styles/blog.module.css'
 
-import PostFeaturedImage from '../../components/PostFeaturedImage.astro'
+// ⭐ API BASE を読み込み
+const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
 
 export async function getStaticPaths() {
-  const posts = await getAllPosts()
-  return posts.map((post: interfaces.Post) => ({ params: { slug: post.Slug } }))
+  const posts = await getAllPosts();
+  return posts.map((post: interfaces.Post) => ({ params: { slug: post.Slug } }));
 }
 
-const { slug } = Astro.params
+const { slug } = Astro.params;
 
-const post = await getPostBySlug(slug)
+// 投稿情報
+const post = await getPostBySlug(slug);
 if (!post) {
-  throw new Error(`Post not found. slug: ${slug}`)
+  throw new Error(`Post not found. slug: ${slug}`);
 }
 
-const [blocks, allPosts, rankedPosts, recentPosts, tags, postsHavingSameTag] =
+// ⭐ Workers API から Blocks を取得する
+const blocksRes = await fetch(`${API_BASE}/post/${post.PageId}`);
+const blocksJson = await blocksRes.json();
+const blocks = blocksJson.results || [];
+
+// 他データ取得
+const [allPosts, rankedPosts, recentPosts, tags, postsHavingSameTag] =
   await Promise.all([
-    getAllBlocksByBlockId(post.PageId),
     getAllPosts(),
     getRankedPosts(),
     getPosts(5),
     getAllTags(),
     getPostsByTag(post.Tags[0]?.name, 6),
-  ])
+  ]);
 
-const fileAtacchedBlocks = extractTargetBlocks('image', blocks)
-  .concat(extractTargetBlocks('file', blocks))
-  .filter((block) => {
-    if (!block) {
-      return false
-    }
-    const imageOrFile = block.Image || block.File
-    return imageOrFile && imageOrFile.File && imageOrFile.File.Url
-  })
+const currentPostIndex = allPosts.findIndex((p) => p.Slug === slug);
+const prevPost = allPosts[currentPostIndex + 1];
+const nextPost = allPosts[currentPostIndex - 1];
 
-// Download files
-await Promise.all(
-  fileAtacchedBlocks
-    .map(async (block) => {
-      const expiryTime = (block.Image || block.File).File.ExpiryTime
-      if (Date.parse(expiryTime) > Date.now()) {
-        return Promise.resolve(block)
-      }
-      return getBlock(block.Id)
-    })
-    .map((promise) =>
-      promise.then((block) => {
-        let url!: URL
-        try {
-          url = new URL((block.Image || block.File).File.Url)
-        } catch {
-          console.log('Invalid file URL: ', (block.Image || block.File)?.File?.Url)
-          return Promise.reject()
-        }
-        return Promise.resolve(url)
-      })
-    )
-    .map((promise) => promise.then(downloadFile))
-)
-
-const currentPostIndex = allPosts.findIndex((post) => post.Slug === slug)
-const prevPost = allPosts[currentPostIndex + 1]
-const nextPost = allPosts[currentPostIndex - 1]
-
-let ogImage = ''
+// OGP 画像
+let ogImage = '';
 if (post.FeaturedImage && post.FeaturedImage.Url) {
-  ogImage = new URL(filePath(new URL(post.FeaturedImage.Url)), Astro.site)
+  ogImage = post.FeaturedImage.Url;
 }
 ---
 
@@ -106,11 +77,11 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
       <PostDate post={post} />
       <PostTags post={post} />
       <PostTitle post={post} enableLink={false} />
-
-        <!-- 👇アイキャッチ表示処理 -->
       <PostFeaturedImage post={post} />
-      
+
+      <!-- ⭐ Workers API から取得した blocks を表示 -->
       <PostBody blocks={blocks} />
+
       <PostTags post={post} />
 
       <footer>
