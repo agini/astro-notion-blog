@@ -1,18 +1,4 @@
 ---
-import * as interfaces from '../../lib/interfaces.ts'
-import {
-  getPosts,
-  getAllPosts,
-  getRankedPosts,
-  getPostBySlug,
-  getPostsByTag,
-  getAllTags,
-} from '../../lib/notion/client.ts'
-
-import {
-  getPostLink,
-} from '../../lib/blog-helpers.ts'
-
 import Layout from '../../layouts/Layout.astro'
 import PostDate from '../../components/PostDate.astro'
 import PostTags from '../../components/PostTags.astro'
@@ -24,52 +10,70 @@ import BlogTagsLink from '../../components/BlogTagsLink.astro'
 import PostFeaturedImage from '../../components/PostFeaturedImage.astro'
 import styles from '../../styles/blog.module.css'
 
-// ⭐ API BASE を読み込み
 const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
 
+/* ---------------------------------------------
+ * 1. getStaticPaths → Workers API /posts を使用
+ * --------------------------------------------- */
 export async function getStaticPaths() {
-  const posts = await getAllPosts();
-  return posts.map((post: interfaces.Post) => ({ params: { slug: post.Slug } }));
+  const res = await fetch(`${API_BASE}/posts`);
+  const data = await res.json();
+
+  return data.results.map(post => ({
+    params: { slug: post.slug },
+  }));
 }
 
 const { slug } = Astro.params;
 
-// 投稿情報
-const post = await getPostBySlug(slug);
-if (!post) {
-  throw new Error(`Post not found. slug: ${slug}`);
-}
+/* ---------------------------------------------------
+ * 2. 記事一覧から対象 slug の投稿を取得
+ * --------------------------------------------------- */
+const listRes = await fetch(`${API_BASE}/posts`);
+const listJson = await listRes.json();
+const allPosts = listJson.results;
 
-// ⭐ Workers API から Blocks を取得する
-const blocksRes = await fetch(`${API_BASE}/post/${post.PageId}`);
-const blocksJson = await blocksRes.json();
-const blocks = blocksJson.results || [];
+// 対象記事
+const post = allPosts.find(p => p.slug === slug);
+if (!post) throw new Error(`Post not found: slug=${slug}`);
 
-// 他データ取得
-const [allPosts, rankedPosts, recentPosts, tags, postsHavingSameTag] =
-  await Promise.all([
-    getAllPosts(),
-    getRankedPosts(),
-    getPosts(5),
-    getAllTags(),
-    getPostsByTag(post.Tags[0]?.name, 6),
-  ]);
+/* ---------------------------------------------------
+ * 3. Blocks を Workers API から取得
+ *    /post/{pageId}
+ * --------------------------------------------------- */
+const detailRes = await fetch(`${API_BASE}/post/${post.id}`);
+const detailJson = await detailRes.json();
 
-const currentPostIndex = allPosts.findIndex((p) => p.Slug === slug);
-const prevPost = allPosts[currentPostIndex + 1];
-const nextPost = allPosts[currentPostIndex - 1];
+const blocks = detailJson.blocks || [];
 
-// OGP 画像
-let ogImage = '';
-if (post.FeaturedImage && post.FeaturedImage.Url) {
-  ogImage = post.FeaturedImage.Url;
-}
+/* ---------------------------------------------------
+ * 4. Recommended / Latest / Tags を Workers API から取得
+ * --------------------------------------------------- */
+const rankedRes = await fetch(`${API_BASE}/ranked-posts`);
+const rankedJson = await rankedRes.json();
+
+const tagsRes = await fetch(`${API_BASE}/tags`);
+const tagsJson = await tagsRes.json();
+
+const latestRes = await fetch(`${API_BASE}/posts`);
+const latestJson = await latestRes.json();
+
+/* ---------------------------------------------------
+ * 5. Prev / Next 計算
+ * --------------------------------------------------- */
+const currentIndex = allPosts.findIndex(p => p.slug === slug);
+const prevPost = allPosts[currentIndex + 1] || null;
+const nextPost = allPosts[currentIndex - 1] || null;
+
+/* ---------------------------------------------------
+ * 6. OGP 対応（存在すれば使う）
+ * --------------------------------------------------- */
+const ogImage = post.featuredImage ?? "";
 ---
 
 <Layout
-  title={post.Title}
-  description={post.Excerpt}
-  path={getPostLink(post.Slug)}
+  title={post.title}
+  description={post.excerpt}
   ogImage={ogImage}
 >
   <div slot="main" class={styles.main}>
@@ -79,7 +83,6 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
       <PostTitle post={post} enableLink={false} />
       <PostFeaturedImage post={post} />
 
-      <!-- ⭐ Workers API から取得した blocks を表示 -->
       <PostBody blocks={blocks} />
 
       <PostTags post={post} />
@@ -91,14 +94,8 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
   </div>
 
   <div slot="aside" class="aside">
-    <BlogPostsLink
-      heading="Posts in the same category"
-      posts={postsHavingSameTag.filter(
-        (p: interfaces.Post) => p.Slug !== post.Slug
-      )}
-    />
-    <BlogPostsLink heading="Recommended" posts={rankedPosts} />
-    <BlogPostsLink heading="Latest posts" posts={recentPosts} />
-    <BlogTagsLink heading="Categories" tags={tags} />
+    <BlogPostsLink heading="Recommended" posts={rankedJson.results || []} />
+    <BlogPostsLink heading="Latest posts" posts={latestJson.results || []} />
+    <BlogTagsLink heading="Categories" tags={tagsJson || []} />
   </div>
 </Layout>
