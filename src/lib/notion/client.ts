@@ -486,6 +486,7 @@ export async function getDatabase(): Promise<Database> {
   let icon: FileObject | Emoji | null = null
   if (res.icon) {
     if (res.icon.type === 'emoji' && 'emoji' in res.icon) {
+      // unchanged
       icon = {
         Type: res.icon.type,
         Emoji: res.icon.emoji,
