@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import fs, { createWriteStream } from 'node:fs'
 import { pipeline } from 'node:stream/promises'
 import axios from 'axios'
@@ -57,14 +58,67 @@ import type {
 import { Client, APIResponseError } from '@notionhq/client'
 
 const client = new Client({
+=======
+import fs from 'node:fs';
+import { Client, APIResponseError } from '@notionhq/client';
+import retry from 'async-retry';
+import { downloadAndProcessImage } from './image-utils'; // client.ts と同じディレクトリに image-utils.ts がある前提
+
+import type * as responses from './responses';
+import type * as requestParams from './request-params';
+import type { Database, Post, Block, Column, TableRow, TableCell } from '../interfaces';
+
+// ----------------------
+// 環境変数チェック
+// ----------------------
+const NOTION_API_SECRET = process.env.NOTION_API_SECRET;
+const DATABASE_ID = process.env.DATABASE_ID;
+
+if (!NOTION_API_SECRET) {
+  throw new Error("Environment variable NOTION_API_SECRET is not set.");
+}
+
+if (!DATABASE_ID) {
+  throw new Error("Environment variable DATABASE_ID is not set.");
+}
+
+// ----------------------
+// Notion クライアント
+// ----------------------
+export const client = new Client({
+>>>>>>> 81abe6e (Update client.ts)
   auth: NOTION_API_SECRET,
 })
 
 let postsCache: Post[] | null = null
 let dbCache: Database | null = null
 
+<<<<<<< HEAD
 const numberOfRetry = 2
 
+=======
+// ----------------------
+// データベース取得
+// ----------------------
+export async function getDatabase(): Promise<Database> {
+  if (dbCache) return dbCache;
+
+  try {
+    const res = await client.databases.retrieve({ database_id: DATABASE_ID });
+    dbCache = res as Database;
+    return dbCache;
+  } catch (err) {
+    if (err instanceof APIResponseError) {
+      console.error(`Notion API Error: ${err.status} - ${err.message}`);
+    }
+    throw err;
+  }
+}
+
+// ----------------------
+// 全記事取得
+// ----------------------
+>>>>>>> 81abe6e (Update client.ts)
 export async function getAllPosts(): Promise<Post[]> {
   if (postsCache !== null) {
     return Promise.resolve(postsCache)
@@ -134,6 +188,7 @@ export async function getAllPosts(): Promise<Post[]> {
   return postsCache
 }
 
+<<<<<<< HEAD
 export async function getPosts(pageSize = 10): Promise<Post[]> {
   const allPosts = await getAllPosts()
   return allPosts.slice(0, pageSize)
@@ -227,6 +282,13 @@ export async function getNumberOfPagesByTag(tagName: string): Promise<number> {
     Math.floor(posts.length / NUMBER_OF_POSTS_PER_PAGE) +
     (posts.length % NUMBER_OF_POSTS_PER_PAGE > 0 ? 1 : 0)
   )
+=======
+// ----------------------
+// Slug で記事取得
+// ----------------------
+export async function getPostBySlug(slug: string) {
+  return (await getAllPosts()).find(p => p.Slug === slug) || null;
+>>>>>>> 81abe6e (Update client.ts)
 }
 
 export async function getAllBlocksByBlockId(blockId: string): Promise<Block[]> {
