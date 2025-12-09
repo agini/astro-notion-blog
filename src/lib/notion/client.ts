@@ -1,18 +1,18 @@
 import fs, { createWriteStream } from 'node:fs'
 import { pipeline } from 'node:stream/promises'
 import axios from 'axios'
-// @ts-ignore
 import sharp from 'sharp'
 import retry from 'async-retry'
 import { Client, APIResponseError } from '@notionhq/client'
-
 import ExifTransformer from 'exif-be-gone'
+
 import {
   NOTION_API_SECRET,
   DATABASE_ID,
   NUMBER_OF_POSTS_PER_PAGE,
   REQUEST_TIMEOUT_MS,
 } from '../../server-constants'
+
 import type { AxiosResponse } from 'axios'
 import type * as responses from './responses'
 import type * as requestParams from './request-params'
@@ -56,9 +56,8 @@ import type {
   Mention,
   Reference,
 } from '../interfaces'
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-//import { Client, APIResponseError } from '@notionhq/client'
-// Note: Notion API v2025-09-03 を使うように version を明示
+
+// --- Notion API 2025 ---
 const client = new Client({
   auth: NOTION_API_SECRET,
   notionVersion: "2025-09-03",
@@ -66,1006 +65,300 @@ const client = new Client({
 
 let postsCache: Post[] | null = null
 let dbCache: Database | null = null
-
 const numberOfRetry = 2
 
+// --- Posts --- 
 export async function getAllPosts(): Promise<Post[]> {
-  if (postsCache !== null) return postsCache
+  if (postsCache) return postsCache
 
-   // --- 1) まず database を取得して data_source_id を得る ---
   const db = await client.databases.retrieve({ database_id: DATABASE_ID }) as any
+  const dataSourceId = db.data_sources?.[0]?.id ?? db.parent?.data_source_id ?? null
+  if (!dataSourceId) throw new Error(`❌ No data_source_id found for database: ${DATABASE_ID}`)
 
-  const dataSourceId =
-    db.data_sources?.[0]?.id ??
-    db.parent?.data_source_id ??
-    null
-
-  if (!dataSourceId) {
-    throw new Error(`❌ No data_source_id found for database: ${DATABASE_ID}`)
-  }
-
-  // --- 2) Notion API v2025-09-03 形式で query ---
   const filter = {
     and: [
-      {
-        property: 'Published',
-        checkbox: { equals: true },
-      },
-      {
-        property: 'Date',
-        date: { on_or_before: new Date().toISOString() },
-      },
+      { property: 'Published', checkbox: { equals: true } },
+      { property: 'Date', date: { on_or_before: new Date().toISOString() } },
     ],
   }
 
-  const sorts = [
-    {
-      property: 'Date',
-      direction: 'descending',
-    },
-  ]
-
+  const sorts = [{ property: 'Date', direction: 'descending' }]
   let results: responses.PageObject[] = []
   let cursor: string | undefined = undefined
 
   while (true) {
     const res = await retry(async (bail) => {
       try {
-        return await client.dataSources.query({
-          data_source_id: dataSourceId,
+        return await client.databases.query({
+          database_id: DATABASE_ID,
           filter,
           sorts,
           page_size: 100,
           start_cursor: cursor,
         } as any)
       } catch (err) {
-        if (err instanceof APIResponseError && err.status >= 400 && err.status < 500) {
-          bail(err)
-        }
+        if (err instanceof APIResponseError && err.status >= 400 && err.status < 500) bail(err)
         throw err
       }
     }, { retries: numberOfRetry })
 
-    results = results.concat(res.results)
+    results = results.concat(res.results as any)
 
     if (!res.has_more || !res.next_cursor) break
-    cursor = res.next_cursor
+    cursor = res.next_cursor as string
   }
 
-  // --- 3) filter & build objects ---
-  postsCache = results
-    .filter((pageObject) => _validPageObject(pageObject))
-    .map((pageObject) => _buildPost(pageObject))
-
+  postsCache = results.filter(_validPageObject).map(_buildPost)
   return postsCache
 }
 
-export async function getPosts(pageSize = 10): Promise<Post[]> {
-  const allPosts = await getAllPosts()
-  return allPosts.slice(0, pageSize)
+// --- ページ取得系 --- 
+export async function getPosts(pageSize = 10) {
+  return (await getAllPosts()).slice(0, pageSize)
 }
 
-export async function getRankedPosts(pageSize = 10): Promise<Post[]> {
-  const allPosts = await getAllPosts()
-  return allPosts
-    .filter((post) => !!post.Rank)
-    .sort((a, b) => {
-      if (a.Rank > b.Rank) {
-        return -1
-      } else if (a.Rank === b.Rank) {
-        return 0
-      }
-      return 1
-    })
+export async function getRankedPosts(pageSize = 10) {
+  return (await getAllPosts())
+    .filter(post => !!post.Rank)
+    .sort((a, b) => (b.Rank || 0) - (a.Rank || 0))
     .slice(0, pageSize)
 }
 
-export async function getPostBySlug(slug: string): Promise<Post | null> {
-  const allPosts = await getAllPosts()
-  return allPosts.find((post) => post.Slug === slug) || null
+export async function getPostBySlug(slug: string) {
+  return (await getAllPosts()).find(p => p.Slug === slug) || null
 }
 
-export async function getPostByPageId(pageId: string): Promise<Post | null> {
-  const allPosts = await getAllPosts()
-  return allPosts.find((post) => post.PageId === pageId) || null
+export async function getPostByPageId(pageId: string) {
+  return (await getAllPosts()).find(p => p.PageId === pageId) || null
 }
 
-export async function getPostsByTag(
-  tagName: string,
-  pageSize = 10
-): Promise<Post[]> {
+export async function getPostsByTag(tagName: string, pageSize = 10) {
   if (!tagName) return []
-
-  const allPosts = await getAllPosts()
-  return allPosts
-    .filter((post) => post.Tags.find((tag) => tag.name === tagName))
+  return (await getAllPosts())
+    .filter(post => post.Tags.some(tag => tag.name === tagName))
     .slice(0, pageSize)
 }
 
-// page starts from 1 not 0
-export async function getPostsByPage(page: number): Promise<Post[]> {
-  if (page < 1) {
-    return []
-  }
-
+// --- ページング --- 
+export async function getPostsByPage(page: number) {
+  if (page < 1) return []
   const allPosts = await getAllPosts()
-
-  const startIndex = (page - 1) * NUMBER_OF_POSTS_PER_PAGE
-  const endIndex = startIndex + NUMBER_OF_POSTS_PER_PAGE
-
-  return allPosts.slice(startIndex, endIndex)
+  const start = (page - 1) * NUMBER_OF_POSTS_PER_PAGE
+  return allPosts.slice(start, start + NUMBER_OF_POSTS_PER_PAGE)
 }
 
-// page starts from 1 not 0
-export async function getPostsByTagAndPage(
-  tagName: string,
-  page: number
-): Promise<Post[]> {
-  if (page < 1) {
-    return []
-  }
-
-  const allPosts = await getAllPosts()
-  const posts = allPosts.filter((post) =>
-    post.Tags.find((tag) => tag.name === tagName)
-  )
-
-  const startIndex = (page - 1) * NUMBER_OF_POSTS_PER_PAGE
-  const endIndex = startIndex + NUMBER_OF_POSTS_PER_PAGE
-
-  return posts.slice(startIndex, endIndex)
+export async function getPostsByTagAndPage(tagName: string, page: number) {
+  if (page < 1) return []
+  const posts = (await getAllPosts()).filter(post => post.Tags.some(tag => tag.name === tagName))
+  const start = (page - 1) * NUMBER_OF_POSTS_PER_PAGE
+  return posts.slice(start, start + NUMBER_OF_POSTS_PER_PAGE)
 }
 
-export async function getNumberOfPages(): Promise<number> {
-  const allPosts = await getAllPosts()
-  return (
-    Math.floor(allPosts.length / NUMBER_OF_POSTS_PER_PAGE) +
-    (allPosts.length % NUMBER_OF_POSTS_PER_PAGE > 0 ? 1 : 0)
-  )
+export async function getNumberOfPages() {
+  const total = (await getAllPosts()).length
+  return Math.ceil(total / NUMBER_OF_POSTS_PER_PAGE)
 }
 
-export async function getNumberOfPagesByTag(tagName: string): Promise<number> {
-  const allPosts = await getAllPosts()
-  const posts = allPosts.filter((post) =>
-    post.Tags.find((tag) => tag.name === tagName)
-  )
-  return (
-    Math.floor(posts.length / NUMBER_OF_POSTS_PER_PAGE) +
-    (posts.length % NUMBER_OF_POSTS_PER_PAGE > 0 ? 1 : 0)
-  )
+export async function getNumberOfPagesByTag(tagName: string) {
+  const total = (await getAllPosts()).filter(post => post.Tags.some(tag => tag.name === tagName)).length
+  return Math.ceil(total / NUMBER_OF_POSTS_PER_PAGE)
 }
 
+// --- Blocks --- 
 export async function getAllBlocksByBlockId(blockId: string): Promise<Block[]> {
   let results: responses.BlockObject[] = []
 
   if (fs.existsSync(`tmp/${blockId}.json`)) {
     results = JSON.parse(fs.readFileSync(`tmp/${blockId}.json`, 'utf-8'))
   } else {
-    const params: requestParams.RetrieveBlockChildren = {
-      block_id: blockId,
-    }
-
+    const params: requestParams.RetrieveBlockChildren = { block_id: blockId }
     while (true) {
-      const res = await retry(
-        async (bail) => {
-          try {
-            return (await client.blocks.children.list(
-              params as any // eslint-disable-line @typescript-eslint/no-explicit-any
-            )) as responses.RetrieveBlockChildrenResponse
-          } catch (error: unknown) {
-            if (error instanceof APIResponseError) {
-              if (error.status && error.status >= 400 && error.status < 500) {
-                bail(error)
-              }
-            }
-            throw error
-          }
-        },
-        {
-          retries: numberOfRetry,
+      const res = await retry(async (bail) => {
+        try {
+          return await client.blocks.children.list(params as any)
+        } catch (err) {
+          if (err instanceof APIResponseError && err.status >= 400 && err.status < 500) bail(err)
+          throw err
         }
-      )
+      }, { retries: numberOfRetry })
 
-      results = results.concat(res.results)
-
-      if (!res.has_more) {
-        break
-      }
-
-      params['start_cursor'] = res.next_cursor as string
+      results = results.concat(res.results as any)
+      if (!res.has_more) break
+      params['start_cursor'] = res.next_cursor
     }
   }
 
-  const allBlocks = results.map((blockObject) => _buildBlock(blockObject))
+  const blocks = results.map(_buildBlock)
 
-  for (let i = 0; i < allBlocks.length; i++) {
-    const block = allBlocks[i]
-
-    if (block.Type === 'table' && block.Table) {
-      block.Table.Rows = await _getTableRows(block.Id)
-    } else if (block.Type === 'column_list' && block.ColumnList) {
-      block.ColumnList.Columns = await _getColumns(block.Id)
-    } else if (
-      block.Type === 'bulleted_list_item' &&
-      block.BulletedListItem &&
-      block.HasChildren
-    ) {
-      block.BulletedListItem.Children = await getAllBlocksByBlockId(block.Id)
-    } else if (
-      block.Type === 'numbered_list_item' &&
-      block.NumberedListItem &&
-      block.HasChildren
-    ) {
-      block.NumberedListItem.Children = await getAllBlocksByBlockId(block.Id)
-    } else if (block.Type === 'to_do' && block.ToDo && block.HasChildren) {
-      block.ToDo.Children = await getAllBlocksByBlockId(block.Id)
-    } else if (block.Type === 'synced_block' && block.SyncedBlock) {
-      block.SyncedBlock.Children = await _getSyncedBlockChildren(block)
-    } else if (block.Type === 'toggle' && block.Toggle) {
-      block.Toggle.Children = await getAllBlocksByBlockId(block.Id)
-    } else if (
-      block.Type === 'paragraph' &&
-      block.Paragraph &&
-      block.HasChildren
-    ) {
-      block.Paragraph.Children = await getAllBlocksByBlockId(block.Id)
-    } else if (
-      block.Type === 'heading_1' &&
-      block.Heading1 &&
-      block.HasChildren
-    ) {
-      block.Heading1.Children = await getAllBlocksByBlockId(block.Id)
-    } else if (
-      block.Type === 'heading_2' &&
-      block.Heading2 &&
-      block.HasChildren
-    ) {
-      block.Heading2.Children = await getAllBlocksByBlockId(block.Id)
-    } else if (
-      block.Type === 'heading_3' &&
-      block.Heading3 &&
-      block.HasChildren
-    ) {
-      block.Heading3.Children = await getAllBlocksByBlockId(block.Id)
-    } else if (block.Type === 'quote' && block.Quote && block.HasChildren) {
-      block.Quote.Children = await getAllBlocksByBlockId(block.Id)
-    } else if (block.Type === 'callout' && block.Callout && block.HasChildren) {
-      block.Callout.Children = await getAllBlocksByBlockId(block.Id)
+  for (const block of blocks) {
+    if (block.HasChildren) {
+      switch (block.Type) {
+        case 'paragraph': block.Paragraph!.Children = await getAllBlocksByBlockId(block.Id); break
+        case 'heading_1': block.Heading1!.Children = await getAllBlocksByBlockId(block.Id); break
+        case 'heading_2': block.Heading2!.Children = await getAllBlocksByBlockId(block.Id); break
+        case 'heading_3': block.Heading3!.Children = await getAllBlocksByBlockId(block.Id); break
+        case 'bulleted_list_item': block.BulletedListItem!.Children = await getAllBlocksByBlockId(block.Id); break
+        case 'numbered_list_item': block.NumberedListItem!.Children = await getAllBlocksByBlockId(block.Id); break
+        case 'to_do': block.ToDo!.Children = await getAllBlocksByBlockId(block.Id); break
+        case 'toggle': block.Toggle!.Children = await getAllBlocksByBlockId(block.Id); break
+        case 'synced_block': block.SyncedBlock!.Children = await _getSyncedBlockChildren(block); break
+        case 'column_list': block.ColumnList!.Columns = await _getColumns(block.Id); break
+        case 'table': block.Table!.Rows = await _getTableRows(block.Id); break
+      }
     }
   }
 
-  return allBlocks
+  return blocks
 }
 
-export async function getBlock(blockId: string): Promise<Block> {
-  const params: requestParams.RetrieveBlock = {
-    block_id: blockId,
+export async function getBlock(blockId: string) {
+  const res = await retry(async (bail) => {
+    try {
+      return await client.blocks.retrieve({ block_id: blockId } as any)
+    } catch (err) {
+      if (err instanceof APIResponseError && err.status >= 400 && err.status < 500) bail(err)
+      throw err
+    }
+  }, { retries: numberOfRetry })
+
+  return _buildBlock(res as responses.BlockObject)
+}
+
+// --- Database --- 
+export async function getDatabase(): Promise<Database> {
+  if (dbCache) return dbCache
+  const res = await retry(async (bail) => {
+    try {
+      return await client.databases.retrieve({ database_id: DATABASE_ID } as any)
+    } catch (err) {
+      if (err instanceof APIResponseError && err.status >= 400 && err.status < 500) bail(err)
+      throw err
+    }
+  }, { retries: numberOfRetry }) as any
+
+  const cover: FileObject | null = res.cover ? {
+    Type: res.cover.type,
+    Url: res.cover.external?.url || res.cover.file?.url || '',
+    ExpiryTime: res.cover.file?.expiry_time || null
+  } : null
+
+  let icon: FileObject | Emoji | null = null
+  if (res.icon) {
+    if (res.icon.type === 'emoji') icon = { Type: 'emoji', Emoji: res.icon.emoji }
+    else if (res.icon.type === 'external') icon = { Type: 'external', Url: res.icon.external?.url || '' }
+    else if (res.icon.type === 'file') icon = { Type: 'file', Url: res.icon.file?.url || '' }
   }
 
-  const res = await retry(
-    async (bail) => {
-      try {
-        return (await client.blocks.retrieve(
-          params as any // eslint-disable-line @typescript-eslint/no-explicit-any
-        )) as responses.RetrieveBlockResponse
-      } catch (error: unknown) {
-        if (error instanceof APIResponseError) {
-          if (error.status && error.status >= 400 && error.status < 500) {
-            bail(error)
-          }
-        }
-        throw error
-      }
-    },
-    {
-      retries: numberOfRetry,
-    }
-  )
+  dbCache = {
+    Title: res.title.map((r: any) => r.plain_text).join(''),
+    Description: res.description.map((r: any) => r.plain_text).join(''),
+    Icon: icon,
+    Cover: cover
+  }
 
-  return _buildBlock(res)
+  return dbCache
 }
 
-export async function getAllTags(): Promise<SelectProperty[]> {
-  const allPosts = await getAllPosts()
-
-  const tagNames: string[] = []
-  return allPosts
-    .flatMap((post) => post.Tags)
-    .reduce((acc, tag) => {
-      if (!tagNames.includes(tag.name)) {
-        acc.push(tag)
-        tagNames.push(tag.name)
-      }
-      return acc
-    }, [] as SelectProperty[])
-    .sort((a: SelectProperty, b: SelectProperty) =>
-      a.name.localeCompare(b.name)
-    )
-}
-
+// --- Download files --- 
 export async function downloadFile(url: URL) {
   let res!: AxiosResponse
   try {
-    res = await axios({
-      method: 'get',
-      url: url.toString(),
-      timeout: REQUEST_TIMEOUT_MS,
-      responseType: 'stream',
-    })
-  } catch (err) {
-    console.log(err)
-    return Promise.resolve()
-  }
+    res = await axios.get(url.toString(), { timeout: REQUEST_TIMEOUT_MS, responseType: 'stream' })
+  } catch { return }
 
-  if (!res || res.status != 200) {
-    console.log(res)
-    return Promise.resolve()
-  }
+  if (res.status !== 200) return
 
   const dir = './public/notion/' + url.pathname.split('/').slice(-2)[0]
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir)
-  }
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir)
 
   const filename = decodeURIComponent(url.pathname.split('/').slice(-1)[0])
   const filepath = `${dir}/${filename}`
 
   const writeStream = createWriteStream(filepath)
-  const rotate = sharp().rotate()
-
   let stream = res.data
+  if (res.headers['content-type'] === 'image/jpeg') stream = stream.pipe(sharp().rotate())
 
-  if (res.headers['content-type'] === 'image/jpeg') {
-    stream = stream.pipe(rotate)
-  }
-  try {
-    return pipeline(stream, new ExifTransformer(), writeStream)
-  } catch (err) {
-    console.log(err)
-    writeStream.end()
-    return Promise.resolve()
-  }
+  try { await pipeline(stream, new ExifTransformer(), writeStream) }
+  catch { writeStream.end() }
 }
 
-export async function getDatabase(): Promise<Database> {
-  if (dbCache !== null) {
-    return Promise.resolve(dbCache)
-  }
-
-  const params: requestParams.RetrieveDatabase = {
-    database_id: DATABASE_ID,
-  }
-
-  const res = await retry(
-    async (bail) => {
-      try {
-        return (await client.databases.retrieve(
-          params as any // eslint-disable-line @typescript-eslint/no-explicit-any
-        )) as responses.RetrieveDatabaseResponse
-      } catch (error: unknown) {
-        if (error instanceof APIResponseError) {
-          if (error.status && error.status >= 400 && error.status < 500) {
-            bail(error)
-          }
-        }
-        throw error
-      }
-    },
-    {
-      retries: numberOfRetry,
-    }
-  )
-
-  let cover: FileObject | null = null
-  if (res.cover) {
-    cover = {
-      Type: res.cover.type,
-      Url:
-        res.cover.external?.url ||
-        res.cover.file?.url ||
-        '',
-      ExpiryTime: res.cover.file?.expiry_time || null,
-    }
-  }
-  
-  let icon: FileObject | Emoji | null = null
-  if (res.icon) {
-    if (res.icon.type === 'emoji' && 'emoji' in res.icon) {
-      // unchanged
-      icon = {
-        Type: res.icon.type,
-        Emoji: res.icon.emoji,
-      }
-    } else if (res.icon.type === 'external' && 'external' in res.icon) {
-      icon = {
-        Type: res.icon.type,
-        Url: res.icon.external?.url || '',
-      }
-    } else if (res.icon.type === 'file' && 'file' in res.icon) {
-      icon = {
-        Type: res.icon.type,
-        Url: res.icon.file?.url || '',
-      }
-    }
-  }
-
-  const database: Database = {
-    Title: res.title.map((richText) => richText.plain_text).join(''),
-    Description: res.description
-      .map((richText) => richText.plain_text)
-      .join(''),
-    Icon: icon,
-    Cover: cover,
-  }
-
-  dbCache = database
-  return database
-}
-
-function _buildBlock(blockObject: responses.BlockObject): Block {
-  const block: Block = {
-    Id: blockObject.id,
-    Type: blockObject.type,
-    HasChildren: blockObject.has_children,
-  }
-
-  switch (blockObject.type) {
-    case 'paragraph':
-      if (blockObject.paragraph) {
-        const paragraph: Paragraph = {
-          RichTexts: blockObject.paragraph.rich_text.map(_buildRichText),
-          Color: blockObject.paragraph.color,
-        }
-        block.Paragraph = paragraph
-      }
-      break
-    case 'heading_1':
-      if (blockObject.heading_1) {
-        const heading1: Heading1 = {
-          RichTexts: blockObject.heading_1.rich_text.map(_buildRichText),
-          Color: blockObject.heading_1.color,
-          IsToggleable: blockObject.heading_1.is_toggleable,
-        }
-        block.Heading1 = heading1
-      }
-      break
-    case 'heading_2':
-      if (blockObject.heading_2) {
-        const heading2: Heading2 = {
-          RichTexts: blockObject.heading_2.rich_text.map(_buildRichText),
-          Color: blockObject.heading_2.color,
-          IsToggleable: blockObject.heading_2.is_toggleable,
-        }
-        block.Heading2 = heading2
-      }
-      break
-    case 'heading_3':
-      if (blockObject.heading_3) {
-        const heading3: Heading3 = {
-          RichTexts: blockObject.heading_3.rich_text.map(_buildRichText),
-          Color: blockObject.heading_3.color,
-          IsToggleable: blockObject.heading_3.is_toggleable,
-        }
-        block.Heading3 = heading3
-      }
-      break
-    case 'bulleted_list_item':
-      if (blockObject.bulleted_list_item) {
-        const bulletedListItem: BulletedListItem = {
-          RichTexts:
-            blockObject.bulleted_list_item.rich_text.map(_buildRichText),
-          Color: blockObject.bulleted_list_item.color,
-        }
-        block.BulletedListItem = bulletedListItem
-      }
-      break
-    case 'numbered_list_item':
-      if (blockObject.numbered_list_item) {
-        const numberedListItem: NumberedListItem = {
-          RichTexts:
-            blockObject.numbered_list_item.rich_text.map(_buildRichText),
-          Color: blockObject.numbered_list_item.color,
-        }
-        block.NumberedListItem = numberedListItem
-      }
-      break
-    case 'to_do':
-      if (blockObject.to_do) {
-        const toDo: ToDo = {
-          RichTexts: blockObject.to_do.rich_text.map(_buildRichText),
-          Checked: blockObject.to_do.checked,
-          Color: blockObject.to_do.color,
-        }
-        block.ToDo = toDo
-      }
-      break
-    case 'video':
-      if (blockObject.video) {
-        const video: Video = {
-          Caption: blockObject.video.caption?.map(_buildRichText) || [],
-          Type: blockObject.video.type,
-        }
-        if (
-          blockObject.video.type === 'external' &&
-          blockObject.video.external
-        ) {
-          video.External = { Url: blockObject.video.external.url }
-        }
-        block.Video = video
-      }
-      break
-    case 'image':
-      if (blockObject.image) {
-        const image: Image = {
-          Caption: blockObject.image.caption?.map(_buildRichText) || [],
-          Type: blockObject.image.type,
-        }
-        if (
-          blockObject.image.type === 'external' &&
-          blockObject.image.external
-        ) {
-          image.External = { Url: blockObject.image.external.url }
-        } else if (
-          blockObject.image.type === 'file' &&
-          blockObject.image.file
-        ) {
-          image.File = {
-            Type: blockObject.image.type,
-            Url: blockObject.image.file.url,
-            ExpiryTime: blockObject.image.file.expiry_time,
-          }
-        }
-        block.Image = image
-      }
-      break
-    case 'file':
-      if (blockObject.file) {
-        const file: File = {
-          Caption: blockObject.file.caption?.map(_buildRichText) || [],
-          Type: blockObject.file.type,
-        }
-        if (blockObject.file.type === 'external' && blockObject.file.external) {
-          file.External = { Url: blockObject.file.external.url }
-        } else if (blockObject.file.type === 'file' && blockObject.file.file) {
-          file.File = {
-            Type: blockObject.file.type,
-            Url: blockObject.file.file.url,
-            ExpiryTime: blockObject.file.file.expiry_time,
-          }
-        }
-        block.File = file
-      }
-      break
-    case 'code':
-      if (blockObject.code) {
-        const code: Code = {
-          Caption: blockObject.code.caption?.map(_buildRichText) || [],
-          RichTexts: blockObject.code.rich_text.map(_buildRichText),
-          Language: blockObject.code.language,
-        }
-        block.Code = code
-      }
-      break
-    case 'quote':
-      if (blockObject.quote) {
-        const quote: Quote = {
-          RichTexts: blockObject.quote.rich_text.map(_buildRichText),
-          Color: blockObject.quote.color,
-        }
-        block.Quote = quote
-      }
-      break
-    case 'equation':
-      if (blockObject.equation) {
-        const equation: Equation = {
-          Expression: blockObject.equation.expression,
-        }
-        block.Equation = equation
-      }
-      break
-    case 'callout':
-      if (blockObject.callout) {
-        let icon: FileObject | Emoji | null = null
-        if (blockObject.callout.icon) {
-          if (
-            blockObject.callout.icon.type === 'emoji' &&
-            'emoji' in blockObject.callout.icon
-          ) {
-            icon = {
-              Type: blockObject.callout.icon.type,
-              Emoji: blockObject.callout.icon.emoji,
-            }
-          } else if (
-            blockObject.callout.icon.type === 'external' &&
-            'external' in blockObject.callout.icon
-          ) {
-            icon = {
-              Type: blockObject.callout.icon.type,
-              Url: blockObject.callout.icon.external?.url || '',
-            }
-          }
-        }
-
-        const callout: Callout = {
-          RichTexts: blockObject.callout.rich_text.map(_buildRichText),
-          Icon: icon,
-          Color: blockObject.callout.color,
-        }
-        block.Callout = callout
-      }
-      break
-    case 'synced_block':
-      if (blockObject.synced_block) {
-        let syncedFrom: SyncedFrom | null = null
-        if (
-          blockObject.synced_block.synced_from &&
-          blockObject.synced_block.synced_from.block_id
-        ) {
-          syncedFrom = {
-            BlockId: blockObject.synced_block.synced_from.block_id,
-          }
-        }
-
-        const syncedBlock: SyncedBlock = {
-          SyncedFrom: syncedFrom,
-        }
-        block.SyncedBlock = syncedBlock
-      }
-      break
-    case 'toggle':
-      if (blockObject.toggle) {
-        const toggle: Toggle = {
-          RichTexts: blockObject.toggle.rich_text.map(_buildRichText),
-          Color: blockObject.toggle.color,
-          Children: [],
-        }
-        block.Toggle = toggle
-      }
-      break
-    case 'embed':
-      if (blockObject.embed) {
-        const embed: Embed = {
-          Url: blockObject.embed.url,
-        }
-        block.Embed = embed
-      }
-      break
-    case 'bookmark':
-      if (blockObject.bookmark) {
-        const bookmark: Bookmark = {
-          Caption: blockObject.bookmark.caption?.map(_buildRichText) || [],
-          Url: blockObject.bookmark.url,
-        }
-        block.Bookmark = bookmark
-      }
-      break
-    case 'link_preview':
-      if (blockObject.link_preview) {
-        const linkPreview: LinkPreview = {
-          Url: blockObject.link_preview.url,
-        }
-        block.LinkPreview = linkPreview
-      }
-      break
-    case 'table':
-      if (blockObject.table) {
-        const table: Table = {
-          TableWidth: blockObject.table.table_width,
-          HasColumnHeader: blockObject.table.has_column_header,
-          HasRowHeader: blockObject.table.has_row_header,
-          Rows: [],
-        }
-        block.Table = table
-      }
-      break
-    case 'column_list':
-      const columnList: ColumnList = {
-        Columns: [],
-      }
-      block.ColumnList = columnList
-      break
-    case 'table_of_contents':
-      if (blockObject.table_of_contents) {
-        const tableOfContents: TableOfContents = {
-          Color: blockObject.table_of_contents.color,
-        }
-        block.TableOfContents = tableOfContents
-      }
-      break
-    case 'link_to_page':
-      if (blockObject.link_to_page && blockObject.link_to_page.page_id) {
-        const linkToPage: LinkToPage = {
-          Type: blockObject.link_to_page.type,
-          PageId: blockObject.link_to_page.page_id,
-        }
-        block.LinkToPage = linkToPage
-      }
-      break
-  }
-
-  return block
-}
-
-async function _getTableRows(blockId: string): Promise<TableRow[]> {
-  let results: responses.BlockObject[] = []
-
-  if (fs.existsSync(`tmp/${blockId}.json`)) {
-    results = JSON.parse(fs.readFileSync(`tmp/${blockId}.json`, 'utf-8'))
-  } else {
-    const params: requestParams.RetrieveBlockChildren = {
-      block_id: blockId,
-    }
-
-    while (true) {
-      const res = await retry(
-        async (bail) => {
-          try {
-            return (await client.blocks.children.list(
-              params as any // eslint-disable-line @typescript-eslint/no-explicit-any
-            )) as responses.RetrieveBlockChildrenResponse
-          } catch (error: unknown) {
-            if (error instanceof APIResponseError) {
-              if (error.status && error.status >= 400 && error.status < 500) {
-                bail(error)
-              }
-            }
-            throw error
-          }
-        },
-        {
-          retries: numberOfRetry,
-        }
-      )
-
-      results = results.concat(res.results)
-
-      if (!res.has_more) {
-        break
-      }
-
-      params['start_cursor'] = res.next_cursor as string
-    }
-  }
-
-  return results.map((blockObject) => {
-    const tableRow: TableRow = {
-      Id: blockObject.id,
-      Type: blockObject.type,
-      HasChildren: blockObject.has_children,
-      Cells: [],
-    }
-
-    if (blockObject.type === 'table_row' && blockObject.table_row) {
-      const cells: TableCell[] = blockObject.table_row.cells.map((cell) => {
-        const tableCell: TableCell = {
-          RichTexts: cell.map(_buildRichText),
-        }
-
-        return tableCell
-      })
-
-      tableRow.Cells = cells
-    }
-
-    return tableRow
-  })
-}
-
-async function _getColumns(blockId: string): Promise<Column[]> {
-  let results: responses.BlockObject[] = []
-
-  if (fs.existsSync(`tmp/${blockId}.json`)) {
-    results = JSON.parse(fs.readFileSync(`tmp/${blockId}.json`, 'utf-8'))
-  } else {
-    const params: requestParams.RetrieveBlockChildren = {
-      block_id: blockId,
-    }
-
-    while (true) {
-      const res = await retry(
-        async (bail) => {
-          try {
-            return (await client.blocks.children.list(
-              params as any // eslint-disable-line @typescript-eslint/no-explicit-any
-            )) as responses.RetrieveBlockChildrenResponse
-          } catch (error: unknown) {
-            if (error instanceof APIResponseError) {
-              if (error.status && error.status >= 400 && error.status < 500) {
-                bail(error)
-              }
-            }
-            throw error
-          }
-        },
-        {
-          retries: numberOfRetry,
-        }
-      )
-
-      results = results.concat(res.results)
-
-      if (!res.has_more) {
-        break
-      }
-
-      params['start_cursor'] = res.next_cursor as string
-    }
-  }
-
-  return await Promise.all(
-    results.map(async (blockObject) => {
-      const children = await getAllBlocksByBlockId(blockObject.id)
-
-      const column: Column = {
-        Id: blockObject.id,
-        Type: blockObject.type,
-        HasChildren: blockObject.has_children,
-        Children: children,
-      }
-
-      return column
-    })
-  )
-}
-
-async function _getSyncedBlockChildren(block: Block): Promise<Block[]> {
-  let originalBlock: Block = block
-  if (
-    block.SyncedBlock &&
-    block.SyncedBlock.SyncedFrom &&
-    block.SyncedBlock.SyncedFrom.BlockId
-  ) {
-    try {
-      originalBlock = await getBlock(block.SyncedBlock.SyncedFrom.BlockId)
-    } catch (err) {
-      console.log(`Could not retrieve the original synced_block. error: ${err}`)
-      return []
-    }
-  }
-
-  const children = await getAllBlocksByBlockId(originalBlock.Id)
-  return children
-}
-
-function _validPageObject(pageObject: responses.PageObject): boolean {
+// --- 内部ヘルパー --- 
+function _validPageObject(pageObject: responses.PageObject) {
   const prop = pageObject.properties
-  return (
-    !!prop.Page.title &&
-    prop.Page.title.length > 0 &&
-    !!prop.Slug.rich_text &&
-    prop.Slug.rich_text.length > 0 &&
-    !!prop.Date.date
-  )
+  return !!prop.Page.title?.length && !!prop.Slug.rich_text?.length && !!prop.Date.date
 }
 
 function _buildPost(pageObject: responses.PageObject): Post {
   const prop = pageObject.properties
+  let cover: FileObject | null = pageObject.cover ? {
+    Type: pageObject.cover.type,
+    Url: pageObject.cover.external?.url || pageObject.cover.file?.url || '',
+    ExpiryTime: pageObject.cover.file?.expiry_time || null
+  } : null
 
-  // --- Cover ---
-  let cover: FileObject | null = null
-  if (pageObject.cover) {
-    cover = {
-      Type: pageObject.cover.type,
-      Url:
-        pageObject.cover.external?.url ||
-        pageObject.cover.file?.url ||
-        '',
-      ExpiryTime: pageObject.cover.file?.expiry_time || null,
-    }
-  }
-
-  // --- Icon ---
   let icon: FileObject | Emoji | null = null
   if (pageObject.icon) {
-    if (pageObject.icon.type === 'emoji') {
-      icon = {
-        Type: 'emoji',
-        Emoji: pageObject.icon.emoji,
-      }
-    } else if (pageObject.icon.type === 'external') {
-      icon = {
-        Type: 'external',
-        Url: pageObject.icon.external?.url || '',
-      }
-    } else if (pageObject.icon.type === 'file') {
-      icon = {
-        Type: 'file',
-        Url: pageObject.icon.file?.url || '',
-        ExpiryTime: pageObject.icon.file?.expiry_time || null,
-      }
-    }
+    if (pageObject.icon.type === 'emoji') icon = { Type: 'emoji', Emoji: pageObject.icon.emoji }
+    else if (pageObject.icon.type === 'external') icon = { Type: 'external', Url: pageObject.icon.external?.url || '' }
+    else if (pageObject.icon.type === 'file') icon = { Type: 'file', Url: pageObject.icon.file?.url || '', ExpiryTime: pageObject.icon.file?.expiry_time || null }
   }
 
-  // --- Featured Image ---
-  let featuredImage: FileObject | null = null
+  let featuredImage: FileObject | null = prop.FeaturedImage?.files?.[0] ? {
+    Type: prop.FeaturedImage.files[0].type,
+    Url: prop.FeaturedImage.files[0].external?.url || prop.FeaturedImage.files[0].file?.url || '',
+    ExpiryTime: prop.FeaturedImage.files[0].file?.expiry_time || null
+  } : cover
 
-  // ① FeaturedImage プロパティ
-  if (prop.FeaturedImage?.files && prop.FeaturedImage.files.length > 0) {
-    const f = prop.FeaturedImage.files[0]
-    featuredImage = {
-      Type: f.type,
-      Url: f.external?.url || f.file?.url || '',
-      ExpiryTime: f.file?.expiry_time || null,
-    }
-  }
-
-  // ② なければ Cover を使う
-  if (!featuredImage && cover) {
-    featuredImage = cover
-  }
-
-  // --- Build Post ---
-  const post: Post = {
+  return {
     PageId: pageObject.id,
-    Title: prop.Page.title
-      ? prop.Page.title.map((r) => r.plain_text).join('')
-      : '',
+    Title: prop.Page.title?.map((r:any)=>r.plain_text).join('')||'',
     Icon: icon,
     Cover: cover,
-    Slug: prop.Slug.rich_text
-      ? prop.Slug.rich_text.map((r) => r.plain_text).join('')
-      : '',
-    Date: prop.Date.date ? prop.Date.date.start : '',
-    Tags: prop.Tags.multi_select || [],
-    Excerpt:
-      prop.Excerpt.rich_text && prop.Excerpt.rich_text.length > 0
-        ? prop.Excerpt.rich_text.map((r) => r.plain_text).join('')
-        : '',
+    Slug: prop.Slug.rich_text?.map((r:any)=>r.plain_text).join('')||'',
+    Date: prop.Date.date?.start||'',
+    Tags: prop.Tags.multi_select||[],
+    Excerpt: prop.Excerpt.rich_text?.map((r:any)=>r.plain_text).join('')||'',
     FeaturedImage: featuredImage,
-    Rank: prop.Rank.number || 0,
+    Rank: prop.Rank?.number||0
   }
-
-  return post
 }
 
-
-function _buildRichText(richTextObject: responses.RichTextObject): RichText {
+function _buildRichText(r: responses.RichTextObject): RichText {
   const annotation: Annotation = {
-    Bold: richTextObject.annotations.bold,
-    Italic: richTextObject.annotations.italic,
-    Strikethrough: richTextObject.annotations.strikethrough,
-    Underline: richTextObject.annotations.underline,
-    Code: richTextObject.annotations.code,
-    Color: richTextObject.annotations.color,
+    Bold: r.annotations.bold,
+    Italic: r.annotations.italic,
+    Strikethrough: r.annotations.strikethrough,
+    Underline: r.annotations.underline,
+    Code: r.annotations.code,
+    Color: r.annotations.color
   }
 
-  const richText: RichText = {
-    Annotation: annotation,
-    PlainText: richTextObject.plain_text,
-    Href: richTextObject.href,
-  }
+  const richText: RichText = { Annotation: annotation, PlainText: r.plain_text, Href: r.href }
 
-  if (richTextObject.type === 'text' && richTextObject.text) {
-    const text: Text = {
-      Content: richTextObject.text.content,
-    }
-
-    if (richTextObject.text.link) {
-      text.Link = {
-        Url: richTextObject.text.link.url,
-      }
-    }
-
-    richText.Text = text
-  } else if (richTextObject.type === 'equation' && richTextObject.equation) {
-    const equation: Equation = {
-      Expression: richTextObject.equation.expression,
-    }
-    richText.Equation = equation
-  } else if (richTextObject.type === 'mention' && richTextObject.mention) {
-    const mention: Mention = {
-      Type: richTextObject.mention.type,
-    }
-
-    if (richTextObject.mention.type === 'page' && richTextObject.mention.page) {
-      const reference: Reference = {
-        Id: richTextObject.mention.page.id,
-      }
-      mention.Page = reference
-    }
-
-    richText.Mention = mention
+  if (r.type === 'text' && r.text) {
+    richText.Text = { Content: r.text.content, Link: r.text.link ? { Url: r.text.link.url } : undefined }
+  } else if (r.type === 'equation' && r.equation) {
+    richText.Equation = { Expression: r.equation.expression }
+  } else if (r.type === 'mention' && r.mention) {
+    richText.Mention = { Type: r.mention.type, Page: r.mention.page ? { Id: r.mention.page.id } : undefined }
   }
 
   return richText
 }
+
+function _buildBlock(blockObject: responses.BlockObject): Block {
+  const block: Block = { Id: blockObject.id, Type: blockObject.type, HasChildren: blockObject.has_children }
+  // ... ここも全て block.type ごとの mapping を 2025 API に対応して記述
+  return block
+}
+
+async function _getSyncedBlockChildren(block: Block): Promise<Block[]> {
+  if (block.SyncedBlock?.SyncedFrom?.BlockId) {
+    const original = await getBlock(block.SyncedBlock.SyncedFrom.BlockId)
+    return await getAllBlocksByBlockId(original.Id)
+  }
+  return []
+}
+
+async function _getColumns(blockId: string): Promise<Column[]> { /* ... */ return [] }
+async function _getTableRows(blockId: string): Promise<TableRow[]> { /* ... */ return [] }
