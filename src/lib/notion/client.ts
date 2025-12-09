@@ -6,6 +6,7 @@ import retry from 'async-retry'
 import { Client, APIResponseError } from '@notionhq/client'
 import ExifTransformer from 'exif-be-gone'
 
+
 import {
   NOTION_API_SECRET,
   DATABASE_ID,
@@ -56,6 +57,10 @@ import type {
   Mention,
   Reference,
 } from '../interfaces'
+
+import { Client } from "@notionhq/client";
+import type { PageObjectResponse, PartialBlockObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { downloadAndProcessImage } from "./notionImages"; // 画像処理関数を別ファイルで管理
 
 // --- Notion API 2025 ---
 const client = new Client({
