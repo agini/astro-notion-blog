@@ -1,39 +1,51 @@
 ---
-import type { SelectProperty } from '../lib/interfaces.ts'
 import { getTagLink } from '../lib/blog-helpers.ts'
 import NoContents from './NoContents.astro'
 import '../styles/notion-color.css'
 
 export interface Props {
   heading: string
-  tags: SelectProperty[]
+  tags: any[]     // ← NotionKit と Worker API の両対応
 }
 
 const { heading, tags } = Astro.props
+
+// Worker API (string[]) と NotionKit ({name,color}) の両対応
+const normalizeTag = (tag: any) => {
+  if (typeof tag === 'string') {
+    return { name: tag, color: 'default' }
+  }
+  return {
+    name: tag.name ?? '',
+    color: tag.color ?? 'default',
+  }
+}
 ---
 
 <div class="blog-tags-link">
   <h2>{heading}</h2>
+
   {
     tags.length === 0 ? (
       <NoContents contents={tags} />
     ) : (
       <ul>
-        {tags.map((tag: SelectProperty) => (
-          <li>
-            <a href={getTagLink(tag.name)} class={`tag ${tag.color}`}>
-              {tag.name}
-            </a>
-          </li>
-        ))}
+        {tags.map((t) => {
+          const tag = normalizeTag(t)
+          return (
+            <li>
+              <a href={getTagLink(tag.name)} class={`tag ${tag.color}`}>
+                {tag.name}
+              </a>
+            </li>
+          )
+        })}
       </ul>
     )
   }
 </div>
 
 <style>
-  .blog-tags-link {
-  }
   .blog-tags-link h2 {
     margin: 0;
     padding-left: 0.4rem;

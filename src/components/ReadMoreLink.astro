@@ -1,16 +1,18 @@
 ---
-import { Post } from '../lib/interfaces.ts'
 import { getPostLink } from '../lib/blog-helpers.ts'
 
 export interface Props {
-  post: Post
+  post: any
 }
 
 const { post } = Astro.props
+
+// 大文字・小文字どちらでも対応
+const slug = post.slug ?? post.Slug ?? ''
 ---
 
 <div class="read-more-link">
-  <a href={getPostLink(post.Slug)}>→Read more</a>
+  <a href={getPostLink(slug)}>→Read more</a>
 </div>
 
 <style>

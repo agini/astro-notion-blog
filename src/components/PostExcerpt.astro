@@ -2,14 +2,16 @@
 import { Post } from '../lib/interfaces.ts'
 
 export interface Props {
-  post: Post
+  post: any
 }
 
 const { post } = Astro.props
----
 
+// excerpt を安全に取得（Worker / Notion 両対応）
+const excerpt = post.excerpt ?? post.Excerpt ?? ''
+---
 <div class="post-excerpt">
-  <p>{post.Excerpt ? post.Excerpt : ''}</p>
+  <p>{excerpt}</p>
 </div>
 
 <style>

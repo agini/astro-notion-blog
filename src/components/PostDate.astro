@@ -1,16 +1,17 @@
 ---
-import { Post } from '../lib/interfaces.ts'
 import { getDateStr } from '../lib/blog-helpers.ts'
 
 export interface Props {
-  post: Post
+  post: any
 }
 
 const { post } = Astro.props
----
 
+// 日付プロパティを両対応
+const date = post.date ?? post.Date ?? ''
+---
 <div class="post-date">
-  {post.Date ? getDateStr(post.Date) : ''}
+  {date ? getDateStr(date) : ''}
 </div>
 
 <style>

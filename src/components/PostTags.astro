@@ -1,29 +1,35 @@
 ---
-import type { Post, SelectProperty } from '../lib/interfaces.ts'
 import { getTagLink } from '../lib/blog-helpers.ts'
 import '../styles/notion-color.css'
 
 export interface Props {
-  post: Post
+  post: any
   enableLink: boolean
 }
 
 const { post, enableLink = true } = Astro.props
+
+// 🔥 Tags と tags の両対応
+const tags = post.Tags ?? post.tags ?? []
 ---
 
 <div class="post-tags">
   {
-    post.Tags &&
-      post.Tags.length > 0 &&
-      post.Tags.map((tag: SelectProperty) => {
+    tags.length > 0 &&
+      tags.map((tag) => {
+        // Cloudflare API → tag.name / tag.color
+        const name = tag.name ?? tag.Name ?? ''
+        const color = tag.color ?? tag.Color ?? 'default'
+
         if (enableLink) {
           return (
-            <a href={getTagLink(tag.name)} class={`tag ${tag.color}`}>
-              {tag.name}
+            <a href={getTagLink(name)} class={`tag ${color}`}>
+              {name}
             </a>
           )
         }
-        return <span class={`tag ${tag.color}`}>{tag.name}</span>
+
+        return <span class={`tag ${color}`}>{name}</span>
       })
   }
 </div>

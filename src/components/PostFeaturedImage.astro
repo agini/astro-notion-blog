@@ -1,23 +1,34 @@
 ---
-import { Post } from '../lib/interfaces.ts'
 import { filePath } from '../lib/blog-helpers'
 
 export interface Props {
-  post: Post
+  post: any
 }
 
 const { post } = Astro.props
 
+// 🎯 Worker API（小文字） or NotionKit（大文字） 両対応
+const rawImage =
+  post.featuredImage ??
+  post.FeaturedImage?.files?.[0]?.file?.url ??
+  ''
+
 let image = ''
-if (post.FeaturedImage && post.FeaturedImage.Url) {
+
+if (rawImage) {
   if (import.meta.env.DEV) {
-    image = post.FeaturedImage.Url
+    // 🔥 開発環境（Vite）は CDN 変換しない
+    image = rawImage
   } else {
-    image = filePath(new URL(post.FeaturedImage.Url))
+    // 🔥 本番は NotionKit の static export 互換（存在しない場合はそのまま）
+    try {
+      image = filePath(new URL(rawImage))
+    } catch {
+      image = rawImage // すでに外部URLならそのまま
+    }
   }
 }
 ---
-
 {
   image && (
     <div class="post-featured-image">
