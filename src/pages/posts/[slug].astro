@@ -1,7 +1,4 @@
 ---
-const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
-const slug = decodeURIComponent(Astro.params.slug);
-
 import Layout from '../../layouts/Layout.astro'
 import PostDate from '../../components/PostDate.astro'
 import PostTags from '../../components/PostTags.astro'
@@ -12,6 +9,9 @@ import BlogPostsLink from '../../components/BlogPostsLink.astro'
 import BlogTagsLink from '../../components/BlogTagsLink.astro'
 import PostFeaturedImage from '../../components/PostFeaturedImage.astro'
 import styles from '../../styles/blog.module.css'
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
+const slug = decodeURIComponent(Astro.params.slug);
 
 export async function getStaticPaths() {
   const res = await fetch(API_BASE + "/posts");
