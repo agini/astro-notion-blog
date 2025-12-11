@@ -1,58 +1,98 @@
 ---
-console.log('API_BASE =', import.meta.env.PUBLIC_API_BASE_URL)
-console.log('slug:', params.slug)
-console.log('post:', post)
+console.log('API_BASE =', import.meta.env.PUBLIC_API_BASE_URL);
 
-import Layout from '../../layouts/Layout.astro'
-import PostDate from '../../components/PostDate.astro'
-import PostTags from '../../components/PostTags.astro'
-import PostTitle from '../../components/PostTitle.astro'
-import PostBody from '../../components/PostBody.astro'
-import PostRelativeLink from '../../components/PostRelativeLink.astro'
-import BlogPostsLink from '../../components/BlogPostsLink.astro'
-import BlogTagsLink from '../../components/BlogTagsLink.astro'
-import PostFeaturedImage from '../../components/PostFeaturedImage.astro'
-import styles from '../../styles/blog.module.css'
+import Layout from '../../layouts/Layout.astro';
+import PostDate from '../../components/PostDate.astro';
+import PostTags from '../../components/PostTags.astro';
+import PostTitle from '../../components/PostTitle.astro';
+import PostBody from '../../components/PostBody.astro';
+import PostRelativeLink from '../../components/PostRelativeLink.astro';
+import BlogPostsLink from '../../components/BlogPostsLink.astro';
+import BlogTagsLink from '../../components/BlogTagsLink.astro';
+import PostFeaturedImage from '../../components/PostFeaturedImage.astro';
+import styles from '../../styles/blog.module.css';
 
-const API_BASE = import.meta.env.PUBLIC_API_BASE_URL
-const slug = Astro.params.slug
-
-// ① slug で記事詳細を直接取得
-const post = await fetch(`${API_BASE}/post-by-slug/${slug}`).then((r) =>
-  r.json()
-)
-
-if (!post.id) {
-  console.error('post-by-slug が記事を返しませんでした:', slug)
-  throw new Error('Post not found: ' + slug)
-}
-
-// ② blocks
-const blocks = Array.isArray(post.blocks) ? post.blocks : []
-
-// ③ 一覧（前後記事計算用）
-// ◎ 記事一覧の取得
-const listJson = await fetch(`${API_BASE}/posts`).then((r) => r.json())
-const allPosts = listJson.results
-
-// 前後の記事
-const idx = allPosts.findIndex((p) => p.slug === slug)
-const prevPost = allPosts[idx + 1] || null
-const nextPost = allPosts[idx - 1] || null
-
-// ④ サイドバーデータ
-const ranked = await fetch(`${API_BASE}/ranked-posts`).then((r) => r.json())
-const tags = await fetch(`${API_BASE}/tags`).then((r) => r.json())
-const latest = await fetch(`${API_BASE}/posts`).then((r) => r.json())
-
-const ogImage = post.featuredImage ?? ''
-
+/* ---------------------------------------------------
+ * ① SSG 用のパス生成
+ * --------------------------------------------------- */
 export async function getStaticPaths() {
-  const res = await fetch(API_BASE + '/posts')
-  const data = await res.json()
+  const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
+  const res = await fetch(`${API_BASE}/posts`);
+  const data = await res.json();
 
-  return data.results.map((post) => ({
-    params: { slug: post.slug },
-  }))
+  return data.results.map((p) => ({
+    params: { slug: p.slug },
+  }));
 }
+
+/* ---------------------------------------------------
+ * ② slug を取得
+ * --------------------------------------------------- */
+const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
+const slug = Astro.params.slug;
+console.log('slug =', slug);
+
+/* ---------------------------------------------------
+ * ③ slug から記事詳細を取得
+ * --------------------------------------------------- */
+const detail = await fetch(`${API_BASE}/post-by-slug/${slug}`).then((r) => r.json());
+
+if (!detail.id) {
+  console.error('post-by-slug が記事を返しませんでした:', slug);
+  throw new Error('Post not found: ' + slug);
+}
+
+const post = detail;
+
+/* ---------------------------------------------------
+ * ④ 記事のブロック（本文）
+ * --------------------------------------------------- */
+const blocks = Array.isArray(post.blocks) ? post.blocks : [];
+
+/* ---------------------------------------------------
+ * ⑤ 前後の記事取得
+ * --------------------------------------------------- */
+const listJson = await fetch(`${API_BASE}/posts`).then((r) => r.json());
+const allPosts = listJson.results;
+
+const getSlug = (p) => p?.slug ?? p?.Slug ?? '';
+
+const idx = allPosts.findIndex((p) => getSlug(p) === slug);
+const prevPost = allPosts[idx + 1] || null;
+const nextPost = allPosts[idx - 1] || null;
+
+/* ---------------------------------------------------
+ * ⑥ サイドバー用データ
+ * --------------------------------------------------- */
+const ranked = await fetch(`${API_BASE}/ranked-posts`).then((r) => r.json());
+const tags = await fetch(`${API_BASE}/tags`).then((r) => r.json());
+const latest = await fetch(`${API_BASE}/posts`).then((r) => r.json());
+
+const ogImage = post.featuredImage ?? '';
 ---
+
+<!-- ------------------------------------------------------
+     HTML
+------------------------------------------------------- -->
+<Layout title={post.title} ogImage={ogImage}>
+
+  <article class={styles.postContainer}>
+
+    <PostTitle post={post} />
+    <PostDate post={post} />
+    <PostTags post={post} />
+    <PostFeaturedImage post={post} />
+
+    <PostBody blocks={blocks} />
+
+    <PostRelativeLink prevPost={prevPost} nextPost={nextPost} />
+
+  </article>
+
+  <aside class={styles.sidebar}>
+    <BlogPostsLink heading="Latest Posts" posts={latest.results} />
+    <BlogTagsLink heading="Tags" tags={tags} />
+    <BlogPostsLink heading="Ranked Posts" posts={ranked.results} />
+  </aside>
+
+</Layout>
