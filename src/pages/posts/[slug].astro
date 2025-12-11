@@ -1,7 +1,6 @@
 ---
 const NOTION_TOKEN = process.env.NOTION_API_KEY;
 const DATABASE_ID = process.env.NOTION_DATABASE_ID;
-const slug = Astro.params.slug;
 
 import Layout from '../../layouts/Layout.astro';
 import PostDate from '../../components/PostDate.astro';
@@ -14,6 +13,8 @@ import BlogTagsLink from '../../components/BlogTagsLink.astro';
 import PostFeaturedImage from '../../components/PostFeaturedImage.astro';
 import styles from '../../styles/blog.module.css';
 
+const slug = Astro.params.slug;
+
 export async function getStaticPaths() {
   const res = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
     method: 'POST',
@@ -24,6 +25,12 @@ export async function getStaticPaths() {
     },
     body: JSON.stringify({ page_size: 100 }),
   });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('Error fetching database:', res.status, text);
+    throw new Error(`Failed to fetch Notion database: ${res.status}`);
+  }
 
   const data = await res.json();
 
@@ -45,6 +52,12 @@ async function getPostData(slug) {
     }),
   });
 
+  if (!queryRes.ok) {
+    const text = await queryRes.text();
+    console.error('Error fetching post by slug:', queryRes.status, text);
+    throw new Error(`Failed to fetch post: ${queryRes.status}`);
+  }
+
   const queryData = await queryRes.json();
   const post = queryData.results[0];
   if (!post) throw new Error('Post not found: ' + slug);
@@ -55,6 +68,13 @@ async function getPostData(slug) {
       'Notion-Version': '2022-06-28',
     },
   });
+
+  if (!blocksRes.ok) {
+    const text = await blocksRes.text();
+    console.error('Error fetching blocks:', blocksRes.status, text);
+    throw new Error(`Failed to fetch blocks: ${blocksRes.status}`);
+  }
+
   const blocksData = await blocksRes.json();
 
   const allPostsRes = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
@@ -66,7 +86,9 @@ async function getPostData(slug) {
     },
     body: JSON.stringify({ page_size: 100 }),
   });
-  const allPosts = (await allPostsRes.json())?.results ?? [];
+
+  const allPostsData = await allPostsRes.json();
+  const allPosts = allPostsData.results ?? [];
 
   const idx = allPosts.findIndex((p) => p.properties.Slug.rich_text[0]?.text.content === slug);
   const prevPost = allPosts[idx + 1] ?? null;
