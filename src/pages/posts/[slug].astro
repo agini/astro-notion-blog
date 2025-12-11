@@ -28,6 +28,7 @@ export async function getStaticPaths() {
 /* ---------------------------------------------------
  * ② slug を取得
  * --------------------------------------------------- */
+ throw new Error("TEST FILE IS REALLY THIS ONE");
 const API_BASE = import.meta.env.PUBLIC_API_BASE_URL;
 const slug = Astro.params.slug;
 console.log('slug =', slug);
@@ -35,7 +36,8 @@ console.log('slug =', slug);
 /* ---------------------------------------------------
  * ③ slug から記事詳細を取得
  * --------------------------------------------------- */
-const detail = await fetch(`${API_BASE}/post-by-slug/${slug}`).then((r) => r.json());
+const detail = await fetch(API_BASE + '/post-by-slug/' + slug).then(r => r.json());
+const listJson = await fetch(API_BASE + '/posts').then(r => r.json());
 
 if (!detail.id) {
   console.error('post-by-slug が記事を返しませんでした:', slug);
@@ -52,7 +54,7 @@ const blocks = Array.isArray(post.blocks) ? post.blocks : [];
 /* ---------------------------------------------------
  * ⑤ 前後の記事取得
  * --------------------------------------------------- */
-const listJson = await fetch(`${API_BASE}/posts`).then((r) => r.json());
+
 const allPosts = listJson.results;
 
 const getSlug = (p) => p?.slug ?? p?.Slug ?? '';
@@ -64,11 +66,9 @@ const nextPost = allPosts[idx - 1] || null;
 /* ---------------------------------------------------
  * ⑥ サイドバー用データ
  * --------------------------------------------------- */
-const ranked = await fetch(`${API_BASE}/ranked-posts`).then((r) => r.json());
-const tags = await fetch(`${API_BASE}/tags`).then((r) => r.json());
-const latest = await fetch(`${API_BASE}/posts`).then((r) => r.json());
-
-const ogImage = post.featuredImage ?? '';
+const ranked = await fetch(API_BASE + '/ranked-posts').then(r => r.json());
+const tags = await fetch(API_BASE + '/tags').then(r => r.json());
+const latest = await fetch(API_BASE + '/posts').then(r => r.json());
 ---
 
 <!-- ------------------------------------------------------
