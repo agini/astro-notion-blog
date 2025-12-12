@@ -1,35 +1,33 @@
 ---
-const props = Astro.props || {};
-const notionCover = props.notionCover || "";
-const slug = props.slug || "";
-const title = props.title || "Cover";
-const date = props.date || "";   //
+const props = Astro.props || {}
+const notionCover = props.notionCover || ''
+const slug = props.slug || ''
+const title = props.title || 'Cover'
+const date = props.date || '' //
 
-const proxyBase = import.meta.env.PUBLIC_NOTION_IMAGE_PROXY || "";
+const proxyBase = import.meta.env.PUBLIC_NOTION_IMAGE_PROXY || ''
 
 // Local cover path
-const localCover = slug ? `/cover/${slug}.jpg` : "";
+const localCover = slug ? `/cover/${slug}.jpg` : ''
 // Default cover path
-const defaultCover = '/cover/default.jpg';
+const defaultCover = '/cover/default.jpg'
 
 // Cover image priority: Notion cover → Local cover → Default cover
-let coverUrl = defaultCover;
+let coverUrl = defaultCover
 
 if (notionCover) {
-  coverUrl = proxyBase ? `${proxyBase}?url=${encodeURIComponent(notionCover)}` : notionCover;
+  coverUrl = proxyBase
+    ? `${proxyBase}?url=${encodeURIComponent(notionCover)}`
+    : notionCover
 } else if (slug && localCover) {
-  coverUrl = localCover;
+  coverUrl = localCover
 }
 ---
 
 <!-- Header cover image with overlay + title -->
 <div class="relative w-full h-[45vh] md:h-[55vh] overflow-hidden">
   <!-- Cover image -->
-  <img
-    src={coverUrl}
-    alt={title}
-    class="absolute inset-0 w-full h-full object-cover"
-  />
+  <img src={coverUrl} alt={title} class="w-full h-auto object-contain" />
 
   <!-- Dark overlay for readability -->
   <div class="absolute inset-0 bg-black/40"></div>
@@ -41,14 +39,15 @@ if (notionCover) {
     </h1>
 
     <!-- Optional: date under title -->
-    {date && (
-      <div class="text-white text-sm md:text-base mt-2 drop-shadow-md">
-        {date}
-      </div>
-    )}
+    {
+      date && (
+        <div class="text-white text-sm md:text-base mt-2 drop-shadow-md">
+          {date}
+        </div>
+      )
+    }
   </div>
 </div>
-
 
 <!-- Title below cover
 <header class="w-full py-4 px-4 md:px-8 bg-white">
