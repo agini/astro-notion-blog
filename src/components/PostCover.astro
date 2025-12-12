@@ -1,0 +1,20 @@
+---
+//Props:notionCover(NotioncoverURL),slug(articleidentifier),title(articletitle)
+const { notionCover, slug, title } = Astro.props;
+const proxyBase = import.meta.env.PUBLIC_NOTION_IMAGE_PROXY;
+
+//Localcoverimagepath
+const localCover = `/cover/${slug}.jpg`;
+//Defaultcoverimagepath
+const defaultCover = '/cover/default.jpg';
+
+//Coverimagepriority
+//1.Notioncover(viaProxy)
+//2.Localcoverimage
+//3.Defaultcoverimage
+const coverUrl = notionCover
+  ? `${proxyBase}?url=${encodeURIComponent(notionCover)}`
+  : localCover; //Iflocalimage doesnotexist,default.jpgwillbeusedautomatically
+---
+
+<img src={coverUrl} alt={title} class="w-full h-auto rounded-lg" />
