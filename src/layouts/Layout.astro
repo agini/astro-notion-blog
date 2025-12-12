@@ -12,7 +12,11 @@ export interface Props {
   description: string
   path: string
   ogImage: string
+  cover?: string  // ➤ NEW: cover prop added to allow passing custom cover image
 }
+
+const props = Astro.props || {}
+const cover = props.cover || '/cover/default.jpg' 
 
 const { title = '', description = '', path = '/', ogImage = '' } = Astro.props
 
@@ -25,6 +29,9 @@ const siteOGImage = new URL(
   getStaticFilePath('/default-og-image.png'),
   Astro.site
 )
+
+// ➤ NEW: set displayCover to props.cover, or fallback to DB cover or default
+const displayCover = cover || coverImageURL || '/cover/default.jpg'
 
 let coverImageURL: string
 if (database.Cover) {
@@ -79,21 +86,14 @@ if (database.Icon && database.Icon.Type === 'file') {
     <GoogleAnalytics trackingId={PUBLIC_GA_TRACKING_ID} />
 
     <div class="container">
-      <main>
-        <!-- カバー画像をタイトルの上に配置 -->
-        {
-          cover && (
-            <div class="cover-container">
-              <img src={cover} alt="Cover image" class="cover-image" />
-            </div>
-          )
-        }
+      <!-- ➤ NEW: cover image above main header -->
+      {displayCover && (
+        <div class="cover">
+          <img src={displayCover} alt="Cover image" class="cover-image" /> <!-- ➤ NEW: display cover image -->
+        </div>
+      )}
 
-        <h1 class="post-title">{title}</h1>
-        <slot name="main" />
-      </main>
-
-      <div>
+      
         <main>
           <div class="content">
             <header>
@@ -140,7 +140,7 @@ if (database.Icon && database.Icon.Type === 'file') {
                 >
               </div>
             </footer>
-          </div>
+            
         </main>
 
         <aside>
