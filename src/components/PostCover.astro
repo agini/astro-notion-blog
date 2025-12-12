@@ -2,8 +2,7 @@
 const props = Astro.props || {}
 const notionCover = props.notionCover || ''
 const slug = props.slug || ''
-const title = props.title || 'Cover'
-const date = props.date || '' //
+const date = props.date || ''
 
 const proxyBase = import.meta.env.PUBLIC_NOTION_IMAGE_PROXY || ''
 
@@ -12,7 +11,7 @@ const localCover = slug ? `/cover/${slug}.jpg` : ''
 // Default cover path
 const defaultCover = '/cover/default.jpg'
 
-// Cover image priority: Notion cover → Local cover → Default cover
+// Cover image priority: Notion cover → Local → Default
 let coverUrl = defaultCover
 
 if (notionCover) {
@@ -22,31 +21,28 @@ if (notionCover) {
 } else if (slug && localCover) {
   coverUrl = localCover
 }
+
+// Format date → keep only YYYY-MM-DD
+const shortDate = date ? date.split('T')[0] : ''
 ---
 
-<!-- Header cover image with overlay + title -->
+<!-- Header cover image -->
 <div class="relative w-full h-[45vh] md:h-[55vh] overflow-hidden">
-  <!-- Cover image -->
-  <img src={coverUrl} alt={title} class="w-full h-auto object-contain" />
 
-  <!-- Dark overlay for readability -->
+  <!-- Cover image (FIXED: object-cover で確実に表示) -->
+  <img src={coverUrl} alt="" class="absolute inset-0 w-full h-full object-cover" />
+
+  <!-- Dark overlay -->
   <div class="absolute inset-0 bg-black/40"></div>
 
-  <!-- Title on cover -->
-  <div class="absolute bottom-8 left-6 md:left-12">
-    <h1 class="text-white text-3xl md:text-5xl font-bold drop-shadow-lg">
-      {title}
-    </h1>
-
-    <!-- Optional: date under title -->
-    {
-      date && (
-        <div class="text-white text-sm md:text-base mt-2 drop-shadow-md">
-          {date}
-        </div>
-      )
-    }
-  </div>
+  <!-- Date only -->
+  {
+    shortDate && (
+      <div class="absolute bottom-8 left-6 md:left-12 text-white text-sm md:text-base drop-shadow-md">
+        {shortDate}
+      </div>
+    )
+  }
 </div>
 
 <!-- Title below cover

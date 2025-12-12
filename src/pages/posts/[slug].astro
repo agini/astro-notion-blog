@@ -17,7 +17,7 @@ import {
   extractTargetBlocks,
 } from '../../lib/blog-helpers.ts'
 import Layout from '../../layouts/Layout.astro'
-import PostCover from '../../components/PostCover.astro';
+import PostCover from '../../components/PostCover.astro'
 import PostDate from '../../components/PostDate.astro'
 import PostTags from '../../components/PostTags.astro'
 import PostTitle from '../../components/PostTitle.astro'
@@ -75,7 +75,10 @@ await Promise.all(
         try {
           url = new URL((block.Image || block.File).File.Url)
         } catch {
-          console.log('Invalid file URL: ', (block.Image || block.File)?.File?.Url)
+          console.log(
+            'Invalid file URL: ',
+            (block.Image || block.File)?.File?.Url
+          )
           return Promise.reject()
         }
         return Promise.resolve(url)
@@ -100,19 +103,18 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
   path={getPostLink(post.Slug)}
   ogImage={ogImage}
 >
+  <!-- cover slot -->
   <div slot="cover">
-  <PostCover
-    notionCover={post.Cover?.Url ?? ""}
-    slug={post.Slug}
-    title={post.Title}
-    date={post.Date}
-    defaultCover="/cover/default.jpg"
-  />
-</div>
+    <PostCover
+      notionCover={post.Cover?.Url ?? ''}
+      slug={post.Slug}
+      title={post.Title}
+      date={post.Date}
+    />
+  </div>
 
   <div slot="main" class={styles.main}>
     <div class={styles.post}>
-
       <!-- Post body below header -->
       <PostDate post={post} />
       <PostTags post={post} />
