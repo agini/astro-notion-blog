@@ -6,20 +6,17 @@ const title = props.title || "Cover";
 
 const proxyBase = import.meta.env.PUBLIC_NOTION_IMAGE_PROXY || "";
 
-// Local cover image path
+// Local cover path
 const localCover = slug ? `/cover/${slug}.jpg` : "";
-// Default cover image path
+// Default cover path
 const defaultCover = '/cover/default.jpg';
 
-// Cover image priority:
-// 1. Notion cover (via proxy)
-// 2. Local cover image
-// 3. Default cover image
+// Cover image priority: Notion cover → Local cover → Default cover
 let coverUrl = defaultCover;
 
 if (notionCover) {
   coverUrl = proxyBase ? `${proxyBase}?url=${encodeURIComponent(notionCover)}` : notionCover;
-} else if (slug) {
+} else if (slug && localCover) {
   coverUrl = localCover;
 }
 ---
