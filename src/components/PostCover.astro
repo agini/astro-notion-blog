@@ -1,20 +1,27 @@
 ---
-//Props:notionCover(NotioncoverURL),slug(articleidentifier),title(articletitle)
-const { notionCover, slug, title } = Astro.props;
-const proxyBase = import.meta.env.PUBLIC_NOTION_IMAGE_PROXY;
+const {
+  notionCover = "",
+  slug = "",
+  title = "Cover"
+} = Astro.props;
 
-//Localcoverimagepath
-const localCover = `/cover/${slug}.jpg`;
-//Defaultcoverimagepath
+const proxyBase = import.meta.env.PUBLIC_NOTION_IMAGE_PROXY || "";
+
+// Local cover image path
+const localCover = slug ? `/cover/${slug}.jpg` : "";
+// Default cover image path
 const defaultCover = '/cover/default.jpg';
 
-//Coverimagepriority
-//1.Notioncover(viaProxy)
-//2.Localcoverimage
-//3.Defaultcoverimage
-const coverUrl = notionCover
-  ? `${proxyBase}?url=${encodeURIComponent(notionCover)}`
-  : localCover; //Iflocalimage doesnotexist,default.jpgwillbeusedautomatically
----
+// Cover image priority
+// 1. Notion cover (via Proxy)
+// 2. Local cover image
+// 3. Default cover image
+let coverUrl = defaultCover;
 
+if (notionCover) {
+  coverUrl = proxyBase ? `${proxyBase}?url=${encodeURIComponent(notionCover)}` : notionCover;
+} else if (slug) {
+  coverUrl = localCover;
+}
+---
 <img src={coverUrl} alt={title} class="w-full h-auto rounded-lg" />
