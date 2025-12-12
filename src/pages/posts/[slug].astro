@@ -49,6 +49,21 @@ const [blocks, allPosts, rankedPosts, recentPosts, tags, postsHavingSameTag] =
     getPostsByTag(post.Tags[0]?.name, 6),
   ])
 
+// ➤ NEW: Determine cover image URL
+// Prefer Notion cover, then local cover, then default cover
+let cover = post.Cover?.Url ?? `/cover/${post.Slug}.jpg`
+const defaultCover = '/cover/default.jpg'
+if (!cover) cover = defaultCover
+
+// ➤ NEW: Determine OG image for social sharing
+let ogImage = '' 
+if (post.FeaturedImage?.Url) { 
+  ogImage = new URL(
+    filePath(new URL(post.FeaturedImage.Url)), 
+    Astro.site
+  )
+}
+
 const fileAtacchedBlocks = extractTargetBlocks('image', blocks)
   .concat(extractTargetBlocks('file', blocks))
   .filter((block) => {
@@ -91,10 +106,6 @@ const currentPostIndex = allPosts.findIndex((post) => post.Slug === slug)
 const prevPost = allPosts[currentPostIndex + 1]
 const nextPost = allPosts[currentPostIndex - 1]
 
-let ogImage = ''
-if (post.FeaturedImage && post.FeaturedImage.Url) {
-  ogImage = new URL(filePath(new URL(post.FeaturedImage.Url)), Astro.site)
-}
 ---
 
 <Layout
@@ -103,18 +114,9 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
   path={getPostLink(post.Slug)}
   ogImage={ogImage}
 >
-  <!-- cover slot -->
-  <div slot="cover">
-    <PostCover
-      notionCover={post.Cover?.Url ?? ''}
-      slug={post.Slug}
-      date={post.Date}
-    />
-  </div>
-
   <div slot="main" class={styles.main}>
     <div class={styles.post}>
-      <!-- Post body below header -->
+      <!-- Display post date and tags -->
       <PostDate post={post} />
       <PostTags post={post} />
       <PostTitle post={post} enableLink={false} />
@@ -127,6 +129,7 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
     </div>
   </div>
 
+  <!-- Sidebar slot -->
   <div slot="aside" class="aside">
     <BlogPostsLink
       heading="Posts in the same category"
