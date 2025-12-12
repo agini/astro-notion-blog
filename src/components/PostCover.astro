@@ -21,4 +21,16 @@ if (notionCover) {
 }
 ---
 
-<img src={coverUrl} alt={title} class="w-full h-auto rounded-lg" />
+<!-- Full-width header with cover image -->
+<header class="relative w-full h-screen overflow-hidden">
+  <img
+    src={coverUrl}
+    alt={title}
+    class="w-full h-full object-cover"
+  />
+  
+  <!-- Overlay with title -->
+  <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+    <h1 class="text-white text-4xl md:text-6xl font-bold text-center px-4">{title}</h1>
+  </div>
+</header>

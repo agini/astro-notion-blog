@@ -102,9 +102,6 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
 >
   <div slot="main" class={styles.main}>
     <div class={styles.post}>
-      <PostDate post={post} />
-      <PostTags post={post} />
-
       <PostCover 
         notionCover={Astro.props.notionCover ?? ""} 
         slug={Astro.props.slug ?? ""} 
@@ -112,6 +109,9 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
         defaultCover={Astro.props.defaultCover ?? "/cover/default.jpg"} 
       />
 
+      <!-- Post body below header -->
+      <PostDate post={post} />
+      <PostTags post={post} />
       <PostTitle post={post} enableLink={false} />
       <PostBody blocks={blocks} />
       <PostTags post={post} />
