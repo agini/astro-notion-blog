@@ -163,6 +163,7 @@ if (database.Icon && database.Icon.Type === 'file') {
   .container {
     display: flex;          /* Enable horizontal layout */
     max-width: 1280px;
+    margin: 0 auto;
     min-height: 100vh;
     gap: 2rem;             /* Space between sidebar and main */
   }
@@ -191,7 +192,6 @@ if (database.Icon && database.Icon.Type === 'file') {
     width: 300px;
     padding: 20px 20px;
     background-color: #f4f4f4;
-    flex-shrink: 0; /* Prevent shrinking */
   }
 
   @media (max-width: 640px) {
@@ -199,18 +199,6 @@ if (database.Icon && database.Icon.Type === 'file') {
       order: 2;             /* Sidebar after main on mobile */
       width: 100%;
     }
-  }
-
-  aside.sidebar {
-    width: 300px;
-    padding: 20px;
-    background-color: #f4f4f4;
-    flex-shrink: 0; /* Prevent shrinking */
-  }
-
-  main {
-    flex: 1; /* Take remaining space */
-    padding: 20px 40px;
   }
 
   /* Cover image */
