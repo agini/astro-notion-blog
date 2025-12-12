@@ -105,10 +105,9 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
       <PostTags post={post} />
 
       <PostCover 
-        notionCover={post.Cover ?? ""} 
-        slug={post.Slug ?? ""} 
-        title={post.Title ?? "Cover"} 
-        defaultCover="/cover/default.jpg"
+        
+        slug={post.Slug} 
+        title={post.Title} 
       />
 
       <PostTitle post={post} enableLink={false} />
