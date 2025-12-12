@@ -103,6 +103,13 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
     <div class={styles.post}>
       <PostDate post={post} />
       <PostTags post={post} />
+
+      <PostCover 
+        notionCover={post.Cover} 
+        slug={post.Slug} 
+        title={post.Title} 
+      />
+
       <PostTitle post={post} enableLink={false} />
       <PostBody blocks={blocks} />
       <PostTags post={post} />
