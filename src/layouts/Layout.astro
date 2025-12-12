@@ -77,9 +77,7 @@ if (database.Icon && database.Icon.Type === 'file') {
   </head>
   <body>
     <GoogleAnalytics trackingId={PUBLIC_GA_TRACKING_ID} />
-    
-    <slot name="cover" />
-        
+
     <div class="container">
       <header>
         {
@@ -93,6 +91,9 @@ if (database.Icon && database.Icon.Type === 'file') {
 
       <div>
         <main>
+          <!-- Cover comes inside main, above title -->
+          <slot name="cover" />
+          
           <div class="content">
             <header>
               <h1>

@@ -101,13 +101,14 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
   ogImage={ogImage}
 >
   <div slot="cover">
-    <PostCover
-      notionCover={post.Cover?.Url ?? ""}
-      slug={post.Slug}
-      title={post.Title}
-      date={post.Date}
-    />
-  </div>
+  <PostCover
+    notionCover={post.Cover?.Url ?? ""}
+    slug={post.Slug}
+    title={post.Title}
+    date={post.Date}
+    defaultCover="/cover/default.jpg"
+  />
+</div>
 
   <div slot="main" class={styles.main}>
     <div class={styles.post}>
