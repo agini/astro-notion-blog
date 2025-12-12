@@ -14,6 +14,12 @@ const slug = title.toLowerCase().replace(/\s+/g, '-');
 // Get current date in YYYY-MM-DD format
 const date = new Date().toISOString().split('T')[0];
 
+// Ensure the target directory exists
+const dir = path.join('pages/posts');
+if (!fs.existsSync(dir)) {
+  fs.mkdirSync(dir, { recursive: true });
+}
+
 // frontmatter + article template
 const content = `---
 title: "${title}"
@@ -29,7 +35,7 @@ Write your article content here.
 `;
 
 // Define file path for the new post
-const filePath = path.join('pages/posts', `${slug}.astro`);
+const filePath = path.join(dir, `${slug}.astro`);
 
 // Check if the file already exists
 if (fs.existsSync(filePath)) {
