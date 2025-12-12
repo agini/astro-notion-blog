@@ -86,15 +86,21 @@ if (database.Icon && database.Icon.Type === 'file') {
     <GoogleAnalytics trackingId={PUBLIC_GA_TRACKING_ID} />
 
     <div class="container">
-      <!-- ➤ NEW: cover image above main header -->
+<!-- ➤ NEW: sidebar fixed on the left -->
+  <aside class="sidebar">
+    <SearchButton />
+    <slot name="aside" />
+  </aside>
+      
+      
+        <main>
+          <!-- ➤ NEW: cover image above main header -->
       {displayCover && (
         <div class="cover">
           <img src={displayCover} alt="Cover image" class="cover-image" /> <!-- ➤ NEW: display cover image -->
         </div>
       )}
 
-      
-        <main>
           <div class="content">
             <header>
               <h1>
