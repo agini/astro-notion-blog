@@ -159,60 +159,49 @@ if (database.Icon && database.Icon.Type === 'file') {
 </html>
 
 <style>
+  /* Container holds sidebar and main content */
   .container {
-    min-height: 100vh;
-  }
-
-  .container > div {
-    display: flex;
+    display: flex;          /* Enable horizontal layout */
     max-width: 1280px;
-  }
-  @media (max-width: 640px) {
-    .container > div {
-      display: block;
-    }
+    margin: 0 auto;
+    min-height: 100vh;
+    gap: 2rem;             /* Space between sidebar and main */
   }
 
+
+   /* Main content takes remaining space */
   main {
-    flex: 1;
-    order: 2;
+    flex: 1;                /* Fill remaining width */
+    order: 2;               /* Keep main after sidebar on desktop */
+    display: flex;
+    flex-direction: column;
     justify-content: space-between;
   }
+   
   @media (max-width: 640px) {
+    .container {
+      display: block;       /* Stack sidebar and main on mobile */
+    }
     main {
-      order: 1;
+      order: 1;             /* Main comes first on mobile */
     }
   }
 
   aside {
-    order: 1;
+    order: 1;               /* Sidebar comes first on desktop */
     width: 300px;
     padding: 20px 20px;
     background-color: #f4f4f4;
   }
+
   @media (max-width: 640px) {
     aside {
-      order: 2;
+      order: 2;             /* Sidebar after main on mobile */
       width: 100%;
     }
   }
 
-  .cover-container {
-    width: 100%;
-    height: 40vh;
-    overflow: hidden;
-    margin-bottom: 1rem;
-    position: relative;
-  }
-
-  .cover-container .cover-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    display: block;
-  }
-
+  /* Cover image */
   div.cover {
   }
   div.cover img {
@@ -223,6 +212,7 @@ if (database.Icon && database.Icon.Type === 'file') {
     object-position: center 60%;
   }
 
+  /* Main content padding */
   div.content {
     padding: 20px 40px;
   }
@@ -232,6 +222,7 @@ if (database.Icon && database.Icon.Type === 'file') {
     }
   }
 
+  /* Header and footer styling */
   main header {
     padding: 20px 0 20px;
   }
