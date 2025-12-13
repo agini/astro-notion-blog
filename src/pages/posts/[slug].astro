@@ -58,7 +58,10 @@ if (!displayCover) displayCover = defaultCover
 /// ➤ NEW: Determine OG image for social sharing
 let ogImage = ''
 if (post.FeaturedImage?.Url) {
-  ogImage = new URL(filePath(new URL(post.FeaturedImage.Url)), Astro.site)
+  ogImage = new URL(
+    filePath(new URL(post.FeaturedImage.Url)),
+    Astro.site
+  ).toString()
 }
 
 const fileAtacchedBlocks = extractTargetBlocks('image', blocks)
@@ -85,11 +88,14 @@ await Promise.all(
       promise.then((block) => {
         let url!: URL
         try {
-          url = new URL((block.Image || block.File).File.Url)
-        } catch {
+          const fileUrl = (block.Image || block.File).File.Url
+          // 基準URLを使って絶対URLを作成
+          url = new URL(fileUrl, Astro.site)
+        } catch (error) {
           console.log(
-            'Invalid file URL: ',
-            (block.Image || block.File)?.File?.Url
+            'Error with file URL:',
+            (block.Image || block.File)?.File?.Url,
+            error
           )
           return Promise.reject()
         }
@@ -102,7 +108,6 @@ await Promise.all(
 const currentPostIndex = allPosts.findIndex((post) => post.Slug === slug)
 const prevPost = allPosts[currentPostIndex + 1]
 const nextPost = allPosts[currentPostIndex - 1]
-
 ---
 
 <Layout
@@ -110,7 +115,9 @@ const nextPost = allPosts[currentPostIndex - 1]
   description={post.Excerpt}
   path={getPostLink(post.Slug)}
   ogImage={ogImage}
-> displayCover={displayCover} <!-- ➤ NEW: pass cover to layout -->
+>
+  displayCover={displayCover}
+  <!-- ➤ NEW: pass cover to layout -->
   <div slot="main" class={styles.main}>
     <div class={styles.post}>
       <!-- Display post date and tags -->

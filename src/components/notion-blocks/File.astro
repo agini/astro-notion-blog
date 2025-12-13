@@ -24,7 +24,7 @@ const filename = decodeURIComponent(url.pathname.split('/').slice(-1)[0])
     {
       url && (
         <a
-          href={block.File.External ? url.String() : filePath(url)}
+          href={block.File.External ? url.toString() : filePath(url)}
           target="_blank"
           rel="noopener noreferrer"
         >
