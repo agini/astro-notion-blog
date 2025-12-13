@@ -162,49 +162,40 @@ if (database.Icon && database.Icon.Type === 'file') {
 <style>
   /* Container holds sidebar and main content */
   .container {
-    display: flex;          /* Enable horizontal layout */
-    max-width: 1280px;
-    margin: 0 auto;
+    display: flex;             /* Horizontal layout */
+    max-width: 1280px;         /* Max width for central layout */
+    margin: 0 auto;            /* Center horizontally */
     min-height: 100vh;
-    gap: 2rem;             /* Space between sidebar and main */
+    gap: 2rem;                 /* Space between sidebar and main */
+    padding: 0 1rem;           /* Small padding on edges for very wide screens */
+    box-sizing: border-box;
   }
 
+  /* Sidebar styling */
+  .sidebar {
+    flex-shrink: 0;            /* Prevent shrinking */
+    width: 300px;              /* Fixed width */
+    padding: 20px;
+    background-color: #f4f4f4;
+    display: flex;
+    flex-direction: column;
+  }
 
-   /* Main content takes remaining space */
+ /* Main content styling */
   main {
-    flex: 1;                /* Fill remaining width */
-    order: 2;               /* Keep main after sidebar on desktop */
+    flex: 1;                   /* Take remaining width */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-  }
-   
-  @media (max-width: 640px) {
-    .container {
-      display: block;       /* Stack sidebar and main on mobile */
-    }
-    main {
-      order: 1;             /* Main comes first on mobile */
-    }
+    padding: 20px 0;           /* Remove large right padding to minimize extra space */
   }
 
-  aside {
-    order: 1;               /* Sidebar comes first on desktop */
-    width: 300px;
-    padding: 20px 20px;
-    background-color: #f4f4f4;
+  /* Inner content padding */
+  div.content {
+    padding: 20px 0;
   }
-
-  @media (max-width: 640px) {
-    aside {
-      order: 2;             /* Sidebar after main on mobile */
-      width: 100%;
-    }
-  }
-
+  
   /* Cover image */
-  div.cover {
-  }
   div.cover img {
     display: block;
     width: 100%;
@@ -213,40 +204,36 @@ if (database.Icon && database.Icon.Type === 'file') {
     object-position: center 60%;
   }
 
-  /* Main content padding */
-  div.content {
-    padding: 20px 40px;
-  }
-  @media (max-width: 640px) {
-    div.content {
-      padding: 0 18px;
-    }
-  }
-
-  /* Header and footer styling */
+  /* Header styling */
   main header {
     padding: 20px 0 20px;
   }
+
   main header h1 {
     font-weight: 700;
     color: #333;
   }
+
   main header h1 a {
     display: block;
     color: inherit;
   }
+
   main header h1 a:hover {
     color: inherit;
   }
+
   main header h1 a span,
   main header h1 a img {
     display: inline-block;
     font-size: 1.1em;
   }
+
   main header h1 a span {
     margin-right: 0.3em;
     margin-left: -0.1rem;
   }
+
   main header h1 a img {
     width: 1.2em;
     height: 1.2em;
@@ -254,6 +241,7 @@ if (database.Icon && database.Icon.Type === 'file') {
     margin-left: -0.3rem;
     vertical-align: sub;
   }
+
   main header h1 a img.custom-icon {
     border-radius: var(--radius);
   }
@@ -263,24 +251,46 @@ if (database.Icon && database.Icon.Type === 'file') {
     font-size: 0.95rem;
   }
 
+  /* Footer styling */
   main footer {
     margin: 30px 0 10px;
     text-align: center;
     font-size: 0.75rem;
   }
-  @media (max-width: 640px) {
-    main footer {
-      margin: 0 auto 30px;
-    }
-  }
+
   main footer span {
     color: #777;
   }
+
   main footer a {
     color: inherit;
     text-decoration: underline;
   }
+
+  /* Mobile responsiveness */
+  @media (max-width: 640px) {
+    .container {
+      display: block;          /* Stack sidebar and main */
+      padding: 0 10px;         /* Add some margin for small screens */
+    }
+    .sidebar {
+      width: 100%;
+      order: 2;               /* Sidebar after main */
+      margin-bottom: 20px;
+    }
+    main {
+      order: 1;
+      padding: 10px;
+    }
+    div.content {
+      padding: 0;
+    }
+    main footer {
+      margin: 0 auto 30px;
+    }
+  }
 </style>
+
 
 <style is:global>
   :root {
