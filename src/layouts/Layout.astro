@@ -164,7 +164,8 @@ if (database.Icon && database.Icon.Type === 'file') {
   /* Container holds sidebar and main content */
   .container {
   display: flex;             /* Horizontal layout */
-  max-width: 1280px;
+  flex-direction: column;
+  width: 100%;               /* Full width */
   min-height: 100vh;
   gap: 2rem;                 /* Space between sidebar and main */
   padding: 0 1rem;           /* Small padding on very wide screens */
@@ -187,11 +188,12 @@ if (database.Icon && database.Icon.Type === 'file') {
  /* Main content styling */
   main {
     flex: 1;                   /* Take remaining width */
-    max-width: 900px;           /* Optional: main content max width */
+    max-width: 1200px;           /* Optional: main content max width */
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: space-between;
     padding: 20px;
+    max-width: 1200px;         /* Adjust max-width for center alignment */
     margin: 0 auto;            /* Center the main content */
   }
   
