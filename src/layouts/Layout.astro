@@ -98,10 +98,8 @@ if (database.Icon && database.Icon.Type === 'file') {
         <slot name="aside" />
       </aside>
       
-          <!-- ➤ Main content -->
+        <!-- ➤ Main content -->
         <main>
-          
-
           <div class="content">
             <header>
               <h1>
@@ -163,10 +161,10 @@ if (database.Icon && database.Icon.Type === 'file') {
 <style>
   /* Container holds sidebar and main content */
   .container {
-   flex: 1;
+  flex: 1;
   max-width: 1200px;         /* Ensure main content is centered */
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: space-between;
   padding: 20px;
   margin: 0 auto;
@@ -291,9 +289,6 @@ if (database.Icon && database.Icon.Type === 'file') {
       order: 1;                /* Main first on mobile */
       padding: 20px 18px;
 
-    }
-    div.content {
-      padding: 0 18px;
     }
     main footer {
       margin: 0 auto 30px;
