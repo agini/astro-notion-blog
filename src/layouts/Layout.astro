@@ -86,6 +86,12 @@ if (database.Icon && database.Icon.Type === 'file') {
     <GoogleAnalytics trackingId={PUBLIC_GA_TRACKING_ID} />
 
     <div class="container">
+      <!-- ➤ NEW: cover image above main header -->
+            {displayCover && (
+        <div class="cover">
+          <img src={displayCover} alt="Cover image" class="cover-image" /> <!-- ➤ NEW: display cover image -->
+        </div>
+      )}
 
       <aside class="sidebar">
          <SearchButton />
@@ -94,12 +100,7 @@ if (database.Icon && database.Icon.Type === 'file') {
       
           <!-- ➤ Main content -->
         <main>
-          <!-- ➤ NEW: cover image above main header -->
-            {displayCover && (
-        <div class="cover">
-          <img src={displayCover} alt="Cover image" class="cover-image" /> <!-- ➤ NEW: display cover image -->
-        </div>
-      )}
+          
 
           <div class="content">
             <header>
@@ -163,6 +164,7 @@ if (database.Icon && database.Icon.Type === 'file') {
   /* Container holds sidebar and main content */
   .container {
   display: flex;             /* Horizontal layout */
+  flex-direction: column;
   width: 100%;               /* Full width */
   min-height: 100vh;
   gap: 2rem;                 /* Space between sidebar and main */
@@ -186,7 +188,7 @@ if (database.Icon && database.Icon.Type === 'file') {
  /* Main content styling */
   main {
     flex: 1;                   /* Take remaining width */
-    max-width: 900px;           /* Optional: main content max width */
+    max-width: 1200px;           /* Optional: main content max width */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -202,6 +204,14 @@ if (database.Icon && database.Icon.Type === 'file') {
     height: 20vh;
     object-fit: cover;
     object-position: center 60%;
+  }
+
+  /* 現在の .cover のスタイル */
+  .cover {
+    width: 100%;
+    height: 25; /* 適切な高さを指定 */
+    position: relative;
+    overflow: hidden;
   }
 
   /* Inner content padding */
