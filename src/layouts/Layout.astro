@@ -162,14 +162,16 @@ if (database.Icon && database.Icon.Type === 'file') {
 <style>
   /* Container holds sidebar and main content */
   .container {
-    display: flex;             /* Horizontal layout */
-    max-width: 1280px;         /* Max width for central layout */
-    margin: 0 auto;            /* Center horizontally */
-    min-height: 100vh;
-    gap: 2rem;                 /* Space between sidebar and main */
-    padding: 0 1rem;           /* Small padding on edges for very wide screens */
-    box-sizing: border-box;
-  }
+  display: flex;             /* Horizontal layout */
+  max-width: 1280px;         /* Optional: overall max width */
+  min-height: 100vh;
+  gap: 2rem;                 /* Space between sidebar and main */
+  padding: 0 1rem;           /* Small padding on very wide screens */
+  box-sizing: border-box;
+
+  margin-left: 0;            /* Left edge flush */
+  margin-right: auto;        /* Right auto for flexible spacing */
+}
 
   /* Sidebar styling */
   .sidebar {
@@ -184,15 +186,11 @@ if (database.Icon && database.Icon.Type === 'file') {
  /* Main content styling */
   main {
     flex: 1;                   /* Take remaining width */
+    max-width: 900px;           /* Optional: main content max width */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 20px 0;           /* Remove large right padding to minimize extra space */
-  }
-
-  /* Inner content padding */
-  div.content {
-    padding: 20px 0;
+    padding: 20px 40px;
   }
   
   /* Cover image */
@@ -202,6 +200,11 @@ if (database.Icon && database.Icon.Type === 'file') {
     height: 20vh;
     object-fit: cover;
     object-position: center 60%;
+  }
+
+  /* Inner content padding */
+  div.content {
+    padding: 20px 40px;
   }
 
   /* Header styling */
@@ -271,19 +274,19 @@ if (database.Icon && database.Icon.Type === 'file') {
   @media (max-width: 640px) {
     .container {
       display: block;          /* Stack sidebar and main */
-      padding: 0 10px;         /* Add some margin for small screens */
     }
     .sidebar {
       width: 100%;
       order: 2;               /* Sidebar after main */
-      margin-bottom: 20px;
     }
     main {
-      order: 1;
-      padding: 10px;
+      order: 1;                /* Main first on mobile */
+      max-width: 100%;
+      padding: 0 18px;
+
     }
     div.content {
-      padding: 0;
+      padding: 0 18px;
     }
     main footer {
       margin: 0 auto 30px;
