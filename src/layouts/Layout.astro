@@ -163,7 +163,7 @@ if (database.Icon && database.Icon.Type === 'file') {
   /* Container holds sidebar and main content */
   .container {
   display: flex;             /* Horizontal layout */
-  max-width: 1280px;         /* Optional: overall max width */
+  width: 100%;               /* Full width */
   min-height: 100vh;
   gap: 2rem;                 /* Space between sidebar and main */
   padding: 0 1rem;           /* Small padding on very wide screens */
@@ -190,7 +190,9 @@ if (database.Icon && database.Icon.Type === 'file') {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 20px 40px;
+    padding: 20px;
+    max-width: 1200px;         /* Adjust max-width for center alignment */
+    margin: 0 auto;            /* Center the main content */
   }
   
   /* Cover image */
@@ -275,14 +277,13 @@ if (database.Icon && database.Icon.Type === 'file') {
     .container {
       display: block;          /* Stack sidebar and main */
     }
-    .sidebar {
+    aside {
+      order: 2;
       width: 100%;
-      order: 2;               /* Sidebar after main */
     }
     main {
       order: 1;                /* Main first on mobile */
-      max-width: 100%;
-      padding: 0 18px;
+      padding: 20px 18px;
 
     }
     div.content {
