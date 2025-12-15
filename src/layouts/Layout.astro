@@ -29,7 +29,16 @@ const siteOGImage = new URL(
   getStaticFilePath('/default-og-image.png'),
   Astro.site
 )
-
+---
+const {
+  title,
+  description,
+  path,
+  ogImage,
+  displayCover,
+  coverType = 'image', // image | iframe | video
+} = Astro.props
+---
 let coverImageURL: string
 if (database.Cover) {
   if (database.Cover.Type === 'external') {
@@ -54,6 +63,28 @@ if (database.Icon && database.Icon.Type === 'file') {
     console.log('Invalid DB custom icon URL: ', database.Icon?.Url)
   }
 }
+
+{displayCover && (
+  <div class="cover">
+    {coverType === 'iframe' && (
+      <iframe
+        src={displayCover}
+        class="cover-iframe"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+      ></iframe>
+    )}
+
+    {coverType === 'image' && (
+      <img
+        src={displayCover}
+        alt="Cover image"
+        class="cover-image"
+      />
+    )}
+  </div>
+)}
+
 ---
 
 <!doctype html>
