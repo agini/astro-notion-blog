@@ -313,17 +313,18 @@ if (database.Icon && database.Icon.Type === 'file') {
 
   /* Mobile responsiveness */
   @media (max-width: 640px) {
-    .container {
-      display: block;          /* Stack sidebar and main */
+    .main-content-wrapper {
+    flex-direction: column;
     }
-    aside {
-      order: 2;
-      width: 100%;
+    .sidebar {
+    width: 100%;
+    order: 2;              /* 記事一覧の後 */
+    padding: 12px 16px;
     }
     main {
-      order: 1;                /* Main first on mobile */
-      padding: 20px 18px;
-
+    order: 1;              /* 記事一覧を先頭に */
+    width: 100%;
+    padding: 16px;
     }
     main footer {
       margin: 0 auto 30px;
