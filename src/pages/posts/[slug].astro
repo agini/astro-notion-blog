@@ -17,7 +17,6 @@ import {
   extractTargetBlocks,
 } from '../../lib/blog-helpers.ts'
 import Layout from '../../layouts/Layout.astro'
-import PostCover from '../../components/PostCover.astro'
 import PostDate from '../../components/PostDate.astro'
 import PostTags from '../../components/PostTags.astro'
 import PostTitle from '../../components/PostTitle.astro'
@@ -49,11 +48,6 @@ const [blocks, allPosts, rankedPosts, recentPosts, tags, postsHavingSameTag] =
     getAllTags(),
     getPostsByTag(post.Tags[0]?.name, 6),
   ])
-
-// ➤ NEW: Determine cover image URL for display in layout
-let displayCover = post.Cover?.Url ?? `/cover/${post.Slug}.jpg`
-const defaultCover = '/cover/default.jpg'
-if (!displayCover) displayCover = defaultCover
 
 /// ➤ NEW: Determine OG image for social sharing
 let ogImage = ''
@@ -105,6 +99,12 @@ await Promise.all(
     .map((promise) => promise.then(downloadFile))
 )
 
+let cover: string | undefined
+
+if (post.Cover?.Url) {
+  cover = filePath(new URL(post.Cover.Url))
+}
+
 const currentPostIndex = allPosts.findIndex((post) => post.Slug === slug)
 const prevPost = allPosts[currentPostIndex + 1]
 const nextPost = allPosts[currentPostIndex - 1]
@@ -115,9 +115,8 @@ const nextPost = allPosts[currentPostIndex - 1]
   description={post.Excerpt}
   path={getPostLink(post.Slug)}
   ogImage={ogImage}
->
-  displayCover={displayCover}
-  <!-- ➤ NEW: pass cover to layout -->
+  >
+
   <div slot="main" class={styles.main}>
     <div class={styles.post}>
       <!-- Display post date and tags -->

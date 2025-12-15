@@ -8,38 +8,33 @@ import SearchModal from '../components/SearchModal.astro'
 import SearchButton from '../components/SearchButton.astro'
 
 export interface Props {
-  title: string
-  description: string
-  path: string
-  ogImage: string
-  cover?: string  // ➤ NEW: cover prop added to allow passing custom cover image
+  title?: string
+  description?: string
+  path?: string
+  ogImage?: string
+  cover?: string
+  coverType?: 'image' | 'iframe'
 }
 
-const props = Astro.props || {}
-const cover = props.cover || '/cover/default.jpg' 
-
-const { title = '', description = '', path = '/', ogImage = '' } = Astro.props
+const {
+  title = '',
+  description = '',
+  path = '/',
+  ogImage = '',
+  cover,
+  coverType = 'image',
+} = Astro.props
 
 const database = await getDatabase()
 
-const siteTitle = title ? `${title} - ${database.Title}` : database.Title
-const siteDescription = description ? description : database.Description
+const siteTitle = title
+  ? `${title} - ${database.Title}`
+  : database.Title
+
+const siteDescription = description || database.Description
 const siteURL = new URL(getNavLink(path), Astro.site).toString()
-const siteOGImage = new URL(
-  getStaticFilePath('/default-og-image.png'),
-  Astro.site
-)
----
-const {
-  title,
-  description,
-  path,
-  ogImage,
-  displayCover,
-  coverType = 'image', // image | iframe | video
-} = Astro.props
----
-let coverImageURL: string
+
+let coverImageURL: string | undefined
 if (database.Cover) {
   if (database.Cover.Type === 'external') {
     coverImageURL = database.Cover.Url
@@ -52,8 +47,14 @@ if (database.Cover) {
   }
 }
 
-// ➤ NEW: set displayCover to props.cover, or fallback to DB cover or default
-const displayCover = cover || coverImageURL || '/cover/default.jpg'
+//FINAL decision
+const displayCover =
+  cover ?? coverImageURL ?? '/cover/default.jpg'
+  
+const siteOGImage = new URL(
+  getStaticFilePath('/default-og-image.png'),
+  Astro.site
+)
 
 let customIconURL: string
 if (database.Icon && database.Icon.Type === 'file') {
@@ -63,28 +64,6 @@ if (database.Icon && database.Icon.Type === 'file') {
     console.log('Invalid DB custom icon URL: ', database.Icon?.Url)
   }
 }
-
-{displayCover && (
-  <div class="cover">
-    {coverType === 'iframe' && (
-      <iframe
-        src={displayCover}
-        class="cover-iframe"
-        loading="lazy"
-        referrerpolicy="no-referrer"
-      ></iframe>
-    )}
-
-    {coverType === 'image' && (
-      <img
-        src={displayCover}
-        alt="Cover image"
-        class="cover-image"
-      />
-    )}
-  </div>
-)}
-
 ---
 
 <!doctype html>
@@ -115,14 +94,29 @@ if (database.Icon && database.Icon.Type === 'file') {
   </head>
   <body>
     <GoogleAnalytics trackingId={PUBLIC_GA_TRACKING_ID} />
+    
+        {displayCover && (
+      <div class="cover">
+        {coverType === 'iframe' && (
+          <iframe
+            src={displayCover}
+            class="cover-iframe"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+          ></iframe>
+        )}
+
+        {coverType === 'image' && (
+          <img
+            src={displayCover}
+            alt="Cover image"
+            class="cover-image"
+          />
+        )}
+      </div>
+    )}
 
     <div class="container">
-      <!-- ➤ NEW: cover image above main header -->
-            {displayCover && (
-        <div class="cover">
-          <img src={displayCover} alt="Cover image" class="cover-image" /> <!-- ➤ NEW: display cover image -->
-        </div>
-      )}
     <!-- Main Content Wrapper (Sidebar and Main) -->
     <div class="main-content-wrapper">
       <aside class="sidebar">
