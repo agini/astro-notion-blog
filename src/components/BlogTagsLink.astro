@@ -54,11 +54,30 @@ const { heading, tags } = Astro.props
     gap: 6px;
   }
   .blog-tags-link ul li a {
-    min-width: 0;
-    border-radius: 3px;
-    padding: 2px 6px;
-    line-height: 1.2;
-    color: rgb(50, 48, 44);
-    background: rgba(227, 226, 224, 0.5);
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    color: #9adfff;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(79,195,247,0.25);
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
   }
+
+  .blog-tags-link ul li a:hover {
+    background: linear-gradient(
+      90deg,
+      rgba(79,195,247,0.3),
+      rgba(79,195,247,0.08)
+    );
+    color: #ffffff;
+    box-shadow:
+      inset 0 0 0 1px rgba(79,195,247,0.4),
+      0 0 6px rgba(79,195,247,0.25);
+  }
+
 </style>

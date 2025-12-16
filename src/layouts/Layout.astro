@@ -414,6 +414,124 @@ if (database.Icon && database.Icon.Type === 'file') {
     -webkit-text-size-adjust: 100%;
   }
 
+    /* Gadget-style Sidebar */
+  .sidebar {
+    background: linear-gradient(
+      180deg,
+      #0f1116 0%,
+      #0b0d12 100%
+    );
+    border: 1px solid #2a2e38;
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,0.03),
+      0 8px 20px rgba(0,0,0,0.6);
+    color: #cfd8dc;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    position: relative;
+  }
+
+  .sidebar h2,
+  .sidebar h3 {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #9aa7b1;
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+
+  /* Left indicator line */
+  .sidebar h2::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    width: 6px;
+    height: 2px;
+    background: #4fc3f7;
+  }
+
+    .sidebar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .sidebar li {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.662);
+  }
+
+  .sidebar a {
+    color: #cfd8dc;
+    text-decoration: none;
+    display: block;
+    padding-left: 0.25rem;
+  }
+
+  /* Sidebar generic link hover */
+  .sidebar a:hover {
+    background: rgba(79, 195, 247, 0.12);
+    color: #ffffff;
+  }
+
+  .sidebar::before,
+  .sidebar::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 1px solid #4fc3f7;
+  }
+
+  .sidebar::before {
+    top: 8px;
+    left: 8px;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .sidebar::after {
+    bottom: 8px;
+    right: 8px;
+    border-left: none;
+    border-top: none;
+  }
+
+    /* Recent posts in sidebar */
+  .sidebar .blog-posts-link a {
+    background: transparent;
+    color: #cfd8dc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+
+  /* Hover */
+  .sidebar .blog-posts-link a:hover {
+    background: linear-gradient(
+      90deg,
+      rgba(79, 195, 247, 0.18),
+      rgba(79, 195, 247, 0.04)
+    );
+    color: #ffffff;
+  }
+
+  .sidebar hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      #4fc3f7,
+      transparent
+    );
+    margin: 0.75rem 0;
+  }
+
+
   figure {
     margin: 0;
     font-size: 0.85rem;
@@ -521,5 +639,15 @@ if (database.Icon && database.Icon.Type === 'file') {
     content: '';
     display: inline-block;
     min-height: 0.9rem;
+  }
+  
+  .sidebar {
+    font-size: 0.9rem;
+    box-shadow: none;
+  }
+
+  .sidebar::before,
+  .sidebar::after {
+    display: none;
   }
 </style>

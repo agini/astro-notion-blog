@@ -52,10 +52,10 @@ const { heading, posts } = Astro.props
   .blog-posts-link {
   }
   .blog-posts-link h2 {
-    margin: 0;
-    padding-left: 0.4rem;
-    color: #777;
-    font-size: 0.95rem;
+    color: #4fc3f7;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
   .blog-posts-link ul {
     list-style-type: none;
@@ -65,19 +65,24 @@ const { heading, posts } = Astro.props
   }
   .blog-posts-link ul li {
   }
-  .blog-posts-link ul li a {
+ .blog-posts-link ul li a {
     display: block;
-    border-radius: var(--radius);
-    padding: 0.4rem 0.4rem;
-    line-height: 1.2rem;
-    color: inherit;
-    font-size: 0.95rem;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #cfd8dc;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(79,195,247,0.18);
+    transition:
+      background 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.15s ease;
   }
   .blog-posts-link ul li a:hover {
-    background-color: #ddd;
+    transform: translateX(2px);
+    box-shadow:
+      inset 0 0 0 1px rgba(79,195,247,0.35),
+      0 0 6px rgba(79,195,247,0.25);
   }
   .blog-posts-link ul li a span,
   .blog-posts-link ul li a img {
