@@ -120,8 +120,11 @@ if (database.Icon && database.Icon.Type === 'file') {
     <!-- Main Content Wrapper (Sidebar and Main) -->
     <div class="main-content-wrapper">
       <aside class="sidebar">
-         <SearchButton />
-        <slot name="aside" />
+        <details>
+          <summary>カテゴリを表示</summary>
+            <SearchButton />
+          <slot name="aside" />
+        </details>
       </aside>
     
           <!-- ➤ Main content -->
@@ -313,6 +316,10 @@ if (database.Icon && database.Icon.Type === 'file') {
 
   /* Mobile responsiveness */
   @media (max-width: 640px) {
+    details summary {
+    font-weight: 600;
+    cursor: pointer;
+    }
     .main-content-wrapper {
     flex-direction: column;
     }
