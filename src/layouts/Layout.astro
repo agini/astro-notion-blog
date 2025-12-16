@@ -199,6 +199,8 @@ if (database.Icon && database.Icon.Type === 'file') {
   box-sizing: border-box;
   margin: 0 auto;
   padding: 20px;
+  position: relative;
+  z-index: 1;
 }
 
   .cover {
@@ -250,6 +252,8 @@ if (database.Icon && database.Icon.Type === 'file') {
     flex-direction: row;
     gap: 2rem;
     width: 100%;
+    position: relative;
+    z-index: 1;
   }
   /* Header styling */
   main header {
@@ -347,11 +351,11 @@ if (database.Icon && database.Icon.Type === 'file') {
     --gap: 1rem;
     --gap-double: 2rem;
 
-    --bg: #fff;
-    --fg: #333;
-    --accents-1: #666;
-    --accents-2: #666;
-    --accents-3: #666;
+    --bg: #0b1620;        /* 背景 */
+    --panel: #f5f8fc;    /* 本文 */
+    --fg-dark: #222;
+    --fg-light: #e6eef5;
+    --hud: #4fc3f7;
     --geist-foreground: #000;
     --geist-success: #690;
 
@@ -380,7 +384,17 @@ if (database.Icon && database.Icon.Type === 'file') {
 
   body {
     min-height: 100vh;
-    background: var(--bg);
+    background-image:
+      linear-gradient(
+        rgba(160,220,255,0.08) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(160,220,255,0.08) 1px,
+        transparent 1px
+      );
+    background-size: 48px 48px;
     color: var(--fg);
     font-family:
       ui-sans-serif,
@@ -414,18 +428,60 @@ if (database.Icon && database.Icon.Type === 'file') {
     -webkit-text-size-adjust: 100%;
   }
 
+  body {
+  background-color: #0b1620;
+  color: var(--fg-light); /* ← body直下用（サイドバーなど） */
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(
+        rgba(79,195,247,0.15) 1px,
+        transparent 1px
+      );
+    background-size: 96px 96px;
+    opacity: 0.35;
+    z-index: 0;
+  }
+
+  main {
+    background: rgba(245, 248, 252, 0.95);
+    border-radius: 6px;
+    color: #222;
+    position: relative;
+    z-index: 1;
+  }
+
+  main p,
+  main ul,
+  main ol,
+  main li {
+    color: #222;
+  }
+
+  .main-content-wrapper {
+    border: 1px solid rgba(79,195,247,0.25);
+    box-shadow:
+      0 0 0 1px rgba(79,195,247,0.08),
+      0 0 18px rgba(79,195,247,0.12);
+  }
+
     /* Gadget-style Sidebar */
   .sidebar {
     background: linear-gradient(
-      180deg,
-      #0f1116 0%,
-      #0b0d12 100%
+    180deg,
+    #1a2430 0%,
+    #141c26 100%
     );
+    color: #e0edf7;
     border: 1px solid #2a2e38;
     box-shadow:
       inset 0 0 0 1px rgba(255,255,255,0.03),
       0 8px 20px rgba(0,0,0,0.6);
-    color: #cfd8dc;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.85rem;
     position: relative;
@@ -464,7 +520,7 @@ if (database.Icon && database.Icon.Type === 'file') {
   }
 
   .sidebar a {
-    color: #cfd8dc;
+    color: #cfe9ff;
     text-decoration: none;
     display: block;
     padding-left: 0.25rem;
@@ -531,7 +587,6 @@ if (database.Icon && database.Icon.Type === 'file') {
     margin: 0.75rem 0;
   }
 
-
   figure {
     margin: 0;
     font-size: 0.85rem;
@@ -553,11 +608,14 @@ if (database.Icon && database.Icon.Type === 'file') {
     background: rgba(247, 212, 255, 0.8);
   }
 
-  h1 {
+  h1, h2 {
     margin: 0;
-    color: var(--fg);
+    color: #4fc3f7;
     font-size: 2rem;
     font-weight: 700;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 
   @media (max-width: 640px) {
@@ -572,9 +630,9 @@ if (database.Icon && database.Icon.Type === 'file') {
     font-size: 0.9rem;
     line-height: 1.8rem;
   }
+  
   p,
   ul {
-    color: #222;
     font-weight: 400;
     font-size: 1rem;
     line-height: 1.8rem;
