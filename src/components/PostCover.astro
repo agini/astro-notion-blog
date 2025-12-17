@@ -9,7 +9,7 @@ const proxyBase = import.meta.env.PUBLIC_NOTION_IMAGE_PROXY || ''
 // Local cover path
 const localCover = slug ? `/cover/${slug}.jpg` : ''
 // Default cover path
-const defaultCover = '/cover/default.jpg'
+const defaultCover = '/cover/default.webp'
 
 // Cover image priority: Notion cover → Local → Default
 let coverUrl = defaultCover
