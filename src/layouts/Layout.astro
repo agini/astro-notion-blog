@@ -435,24 +435,59 @@ if (database.Icon && database.Icon.Type === 'file') {
   color: var(--fg-light); /* ← body直下用（サイドバーなど） */
   }
 
-  body::after {
-    content: "";
+  body::before {
+    content: '';
     position: fixed;
     inset: 0;
-    pointer-events: none;
-    background-image:
-      radial-gradient(
-        rgba(79,195,247,0.15) 1px,
+    z-index: -2;
+
+    background:
+      /* グリッド（経緯線） */
+      linear-gradient(
+        rgba(80, 160, 200, 0.08) 1px,
         transparent 1px
-      );
-    background-size: 96px 96px;
-    opacity: 0.35;
-    z-index: 0;
+      ),
+      linear-gradient(
+        90deg,
+        rgba(80, 160, 200, 0.08) 1px,
+        transparent 1px
+      ),
+      /* 世界地図イメージ */
+      url('/assets/bg/world-map-wire.png');
+
+    background-size:
+      40px 40px,
+      40px 40px,
+      cover;
+
+    background-position: center;
+    background-repeat: repeat, repeat, no-repeat;
+
+    filter: contrast(1.1) brightness(0.7);
   }
 
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.03),
+        rgba(255,255,255,0.03) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    }
+
   main {
-    background: rgba(245, 248, 252, 0.95);
-    border-radius: 6px;
+    background: rgba(245, 248, 252, 0.96);
+    backdrop-filter: blur(2px); /* ほんのりHUD感 */
     color: #222;
     position: relative;
     z-index: 1;
@@ -474,12 +509,9 @@ if (database.Icon && database.Icon.Type === 'file') {
 
     /* Gadget-style Sidebar */
   .sidebar {
-    background: linear-gradient(
-    180deg,
-    #1a2430 0%,
-    #141c26 100%
-    );
-    color: #e0edf7;
+   background: rgba(15, 30, 45, 0.65);
+    backdrop-filter: blur(3px);
+    color: #d6ecff;
     border: 1px solid #2a2e38;
     box-shadow:
       inset 0 0 0 1px rgba(255,255,255,0.03),
