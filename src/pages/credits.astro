@@ -1,0 +1,64 @@
+---
+import Layout from '../layouts/Layout.astro'
+---
+
+<Layout
+  title="Credits"
+  description="Image and asset credits"
+  path="/credits"
+>
+  <div slot="main" class="credits">
+    <h1>Credits</h1>
+
+    <section>
+      <h2>Images</h2>
+      <ul>
+        <li>
+          Background image by
+          <a href="https://www.freepik.com" target="_blank" rel="noopener">
+            starline / Freepik
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Libraries & Tools</h2>
+      <ul>
+        <li>Astro</li>
+        <li>Notion API</li>
+        <li>Cloudflare Pages</li>
+      </ul>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  /* Credits page layout */
+  .credits {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .credits h1 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .credits h2 {
+    font-size: 1.2rem;
+    margin: 1.5rem 0 0.5rem;
+    color: #666;
+  }
+
+  .credits ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .credits li {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+</style>
