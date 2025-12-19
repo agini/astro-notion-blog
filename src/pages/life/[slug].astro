@@ -1,6 +1,6 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import { getPostsByCategory } from "../lib/notion";
+import Layout from "../../layouts/Layout.astro";
+import { getPostsByCategory } from "../../lib/notion";
 
 export async function getStaticPaths() {
   const posts = await getPostsByCategory("life");

@@ -1,14 +1,4 @@
 ---
-import { getPostsByCategory } from "../lib/notion";
-const posts = await getPostsByCategory("tech");
+console.log("TECH INDEX LOADED");
 ---
-
-<h1>Tech</h1>
-
-<ul>
-  {posts.map((post) => (
-    <li>
-      <a href={`/tech/${post.slug}`}>{post.title}</a>
-    </li>
-  ))}
-</ul>
+<h1>Tech Index OK</h1>
