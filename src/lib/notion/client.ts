@@ -1,3 +1,5 @@
+console.log("NOTION_TOKEN exists:", !!process.env.NOTION_TOKEN);
+
 import fs, { createWriteStream } from 'node:fs'
 import { pipeline } from 'node:stream/promises'
 import axios from 'axios'
@@ -5,7 +7,7 @@ import sharp from 'sharp'
 import retry from 'async-retry'
 import ExifTransformer from 'exif-be-gone'
 import {
-  NOTION_API_SECRET,
+  NOTION_TOKEN,
   DATABASE_ID,
   NUMBER_OF_POSTS_PER_PAGE,
   REQUEST_TIMEOUT_MS,
@@ -57,7 +59,7 @@ import type {
 import { Client, APIResponseError } from '@notionhq/client'
 
 const client = new Client({
-  auth: NOTION_API_SECRET,
+   auth: process.env.NOTION_TOKEN,
 })
 
 let postsCache: Post[] | null = null
