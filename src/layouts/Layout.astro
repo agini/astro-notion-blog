@@ -49,7 +49,7 @@ if (database.Cover) {
 
 //FINAL decision
 const displayCover =
-  cover ?? coverImageURL ?? '/cover/default.jpg'
+  cover ?? coverImageURL ?? '/cover/default.webp'
   
 const siteOGImage = new URL(
   getStaticFilePath('/default-og-image.png'),
@@ -386,16 +386,6 @@ if (database.Icon && database.Icon.Type === 'file') {
 
   body {
     min-height: 100vh;
-    background-image:
-      linear-gradient(
-        rgba(160,220,255,0.08) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        90deg,
-        rgba(160,220,255,0.08) 1px,
-        transparent 1px
-      );
     background-size: 48px 48px;
     color: var(--fg);
     font-family:
@@ -420,9 +410,6 @@ if (database.Icon && database.Icon.Type === 'file') {
     background-position:
       0 0,
       25px 25px;
-    background-attachment: fixed;
-    background-size: 50px 50px;
-
     /* Hack */
     overflow-x: hidden;
 
@@ -431,9 +418,13 @@ if (database.Icon && database.Icon.Type === 'file') {
   }
 
   body {
-  background-color: #0b1620;
-  color: var(--fg-light); /* ← body直下用（サイドバーなど） */
-  }
+    background-color: #0b1620;
+    background-image:
+      linear-gradient(rgba(80,160,200,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(80,160,200,0.08) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-attachment: scroll; /* fixedは使わない */
+  }  
 
   body::before {
     content: '';
@@ -486,9 +477,10 @@ if (database.Icon && database.Icon.Type === 'file') {
     }
 
   main {
-    background: rgba(245, 248, 252, 0.96);
-    backdrop-filter: blur(2px); /* ほんのりHUD感 */
+    background: rgba(245,248,252,0.97);
     color: #222;
+    border: 1px solid rgba(79,195,247,0.35);
+    box-shadow: 0 0 14px rgba(79,195,247,0.18);
     position: relative;
     z-index: 1;
   }
@@ -509,13 +501,10 @@ if (database.Icon && database.Icon.Type === 'file') {
 
     /* Gadget-style Sidebar */
   .sidebar {
-   background: rgba(15, 30, 45, 0.65);
-    backdrop-filter: blur(3px);
+    background: rgba(8, 16, 24, 0.85); /* ← 既存より少し暗く */
     color: #d6ecff;
-    border: 1px solid #2a2e38;
-    box-shadow:
-      inset 0 0 0 1px rgba(255,255,255,0.03),
-      0 8px 20px rgba(0,0,0,0.6);
+    border: 1px solid rgba(79,195,247,0.35);
+    box-shadow: 0 0 12px rgba(0,0,0,0.6);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.85rem;
     position: relative;
@@ -565,7 +554,7 @@ if (database.Icon && database.Icon.Type === 'file') {
     background: #4fc3f7;
   }
 
-    .sidebar ul {
+  .sidebar ul {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -585,8 +574,8 @@ if (database.Icon && database.Icon.Type === 'file') {
 
   /* Sidebar generic link hover */
   .sidebar a:hover {
-    background: rgba(79, 195, 247, 0.12);
-    color: #ffffff;
+    background: rgba(79,195,247,0.12);
+    color: #fff;
   }
 
   .sidebar::before,
@@ -599,15 +588,15 @@ if (database.Icon && database.Icon.Type === 'file') {
   }
 
   .sidebar::before {
-    top: 8px;
-    left: 8px;
+    top: 6px;
+    left: 6px;
     border-right: none;
     border-bottom: none;
   }
 
   .sidebar::after {
-    bottom: 8px;
-    right: 8px;
+    bottom: 6px;
+    right: 6px;
     border-left: none;
     border-top: none;
   }
@@ -701,6 +690,8 @@ if (database.Icon && database.Icon.Type === 'file') {
     font-family: 'Segoe UI', system-ui, sans-serif;
     letter-spacing: 0.12em;
     text-transform: uppercase;
+    border-bottom: 1px solid rgba(79,195,247,0.4);
+    padding-bottom: 0.4rem;
   }
 
   @media (max-width: 640px) {

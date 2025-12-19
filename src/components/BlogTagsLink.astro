@@ -33,13 +33,26 @@ const { heading, tags } = Astro.props
 
 <style>
   .blog-tags-link {
+<<<<<<< HEAD
     margin-bottom: 0.8rem;
+=======
+    backdrop-filter: blur(2px);
+>>>>>>> 0a0494d78b298826efe24837b81845177b8ed675
   }
+  
   .blog-tags-link h2 {
+<<<<<<< HEAD
     margin: 0;
     padding-left: 0.4rem;
     color: #ffffff;
     text-shadow: 0 0 6px rgba(79,195,247,0.6);
+=======
+    color: #9fb8c8;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+>>>>>>> 0a0494d78b298826efe24837b81845177b8ed675
   }
 
   .blog-tags-link ul {
@@ -49,38 +62,34 @@ const { heading, tags } = Astro.props
     margin-top: 0.5rem;
     margin-block-end: 1rem;
   }
+  
   .blog-tags-link ul li {
-    position: relative;
-    padding: 0.4rem;
-    line-height: 1.2rem;
-    font-size: 0.9rem;
-    gap: 6px;
-  }
-  .blog-tags-link ul li a {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    letter-spacing: 0.04em;
-    color: #9adfff;
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(79,195,247,0.25);
-    transition:
-      background 0.2s ease,
-      color 0.2s ease,
-      box-shadow 0.2s ease;
+    background: rgba(5, 12, 18, 0.55); /* ← 背景より明確に暗い */
+    border-left: 3px solid rgba(79,195,247,0.5);
+    padding: 0.45rem 0.6rem;
+    margin-bottom: 0.35rem;
   }
 
-  .blog-tags-link ul li a:hover {
-    background: linear-gradient(
-      90deg,
-      rgba(79,195,247,0.3),
-      rgba(79,195,247,0.08)
-    );
+
+  .blog-tags-link ul li a {
+    background: transparent; /* ← 念のため */
+    color: rgba(240, 250, 255, 0.95);
+    font-weight: 500;
+  }
+
+  .blog-tags-link ul li:hover {
+    background: rgba(10, 25, 40, 0.85);
+    border-left-color: #4fc3f7;
+  }
+
+  .blog-tags-link ul li:hover a {
     color: #ffffff;
-    box-shadow:
-      inset 0 0 0 1px rgba(79,195,247,0.4),
-      0 0 6px rgba(79,195,247,0.25);
+  }
+
+  @media (max-width: 640px) {
+    .blog-tags-link ul li {
+      border-left-width: 3px;
+    }
   }
 
 </style>
