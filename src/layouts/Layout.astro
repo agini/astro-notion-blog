@@ -523,13 +523,36 @@ if (database.Icon && database.Icon.Type === 'file') {
 
   .sidebar h2,
   .sidebar h3 {
+    color: #9fb8c8; /* 青灰色 */
     font-size: 0.65rem;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: #9aa7b1;
-    margin-bottom: 0.5rem;
-    position: relative;
+
+    background: rgba(10, 20, 30, 0.85);
+    padding: 0.25rem 0.45rem;
+    border-left: 3px solid rgba(79,195,247,0.6);
+    margin-bottom: 0.4rem;
   }
+
+  /* Sidebar section headings */
+.sidebar h2 {
+  color: #eaf6ff;                 /* ほぼ白寄り */
+  font-size: 0.7rem;              /* 少しだけ上げる */
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+
+  padding: 0.4rem 0.5rem 0.35rem;
+  margin: 0.8rem 0 0.4rem;
+
+  background: linear-gradient(
+    90deg,
+    rgba(79,195,247,0.22),
+    rgba(79,195,247,0.04)
+  );
+
+  border-left: 3px solid #4fc3f7;
+}
 
   /* Left indicator line */
   .sidebar h2::before {
@@ -619,6 +642,34 @@ if (database.Icon && database.Icon.Type === 'file') {
       transparent
     );
     margin: 0.75rem 0;
+  }
+
+    .sidebar summary {
+    list-style: none;
+    cursor: pointer;
+
+    color: #f1f7fb;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+
+    padding: 0.45rem 0.6rem;
+    margin-bottom: 0.6rem;
+
+    background: linear-gradient(
+      90deg,
+      rgba(79,195,247,0.25),
+      rgba(79,195,247,0.05)
+    );
+
+    border-left: 3px solid #4fc3f7;
+  }
+
+  .sidebar .aside {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 0.6rem;
+    border-radius: 4px;
   }
 
   figure {

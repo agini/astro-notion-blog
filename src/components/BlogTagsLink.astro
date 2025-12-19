@@ -33,17 +33,20 @@ const { heading, tags } = Astro.props
 
 <style>
   .blog-tags-link {
+    margin-bottom: 0.8rem;
   }
   .blog-tags-link h2 {
     margin: 0;
     padding-left: 0.4rem;
-    color: #777;
-    font-size: 0.95rem;
+    color: #ffffff;
+    text-shadow: 0 0 6px rgba(79,195,247,0.6);
   }
+
   .blog-tags-link ul {
+    background: rgba(6, 14, 22, 0.65); /* 白を完全排除 */
     list-style-type: none;
-    padding: 0;
-    margin-top: 0.3rem;
+    padding-left: 0.25rem;
+    margin-top: 0.5rem;
     margin-block-end: 1rem;
   }
   .blog-tags-link ul li {
