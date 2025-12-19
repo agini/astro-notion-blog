@@ -1,0 +1,14 @@
+---
+import { getPostsByCategory } from "../lib/notion";
+const posts = await getPostsByCategory("life");
+---
+
+<h1>life</h1>
+
+<ul>
+  {posts.map((post) => (
+    <li>
+      <a href={`/life/${post.slug}`}>{post.title}</a>
+    </li>
+  ))}
+</ul>
