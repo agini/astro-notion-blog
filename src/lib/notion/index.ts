@@ -1,1 +1,1 @@
-export * from './client'
+export { getPostsByTagAndPage } from "./client";

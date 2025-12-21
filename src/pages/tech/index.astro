@@ -1,4 +1,14 @@
 ---
-console.log("TECH INDEX LOADED");
+import { getPostsByTagAndPage } from "../../lib/notion";
+const posts = await getPostsByTagAndPage("tech");
 ---
-<h1>Tech Index OK</h1>
+
+<h1>life</h1>
+
+<ul>
+  {posts.map((post) => (
+    <li>
+      <a href={`/life/${post.slug}`}>{post.title}</a>
+    </li>
+  ))}
+</ul>

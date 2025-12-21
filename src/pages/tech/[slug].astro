@@ -1,9 +1,9 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { getPostsByCategory } from "../../lib/notion";
+import { getPostsByTagAndPage } from "../../lib/notion";
 
 export async function getStaticPaths() {
-  const posts = await getPostsByCategory("tech");
+  const posts = await getPostsByTagAndPage("tech");
 
   return posts.map((post) => ({
     params: { slug: post.slug },
