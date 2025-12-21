@@ -8,7 +8,7 @@ const posts = await getPostsByTagAndPage("ramblings");
 <ul>
   {posts.map((post) => (
     <li>
-      <a href={`/game/${post.slug}`}>{post.title}</a>
+      <a href={`/ramblings/${post.slug}`}>{post.title}</a>
     </li>
   ))}
 </ul>
