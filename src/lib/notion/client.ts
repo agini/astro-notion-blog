@@ -212,6 +212,18 @@ export async function getPostsByTagAndPage(
   return posts.slice(startIndex, endIndex)
 }
 
+export async function getTotalPagesByTag(
+  tagName: string
+): Promise<number> {
+  const posts = await getAllPosts()
+  const filtered = posts.filter(
+    (post) => post.category === tagName
+  )
+
+  const postsPerPage = 10
+  return Math.ceil(filtered.length / postsPerPage)
+}
+
 export async function getNumberOfPages(): Promise<number> {
   const allPosts = await getAllPosts()
   return (
@@ -491,6 +503,25 @@ export async function getDatabase(): Promise<Database> {
 
   dbCache = database
   return database
+}
+
+export async function getAllCategories(): Promise<
+  { name: string; count: number }[]
+> {
+  const posts = await getAllPosts()
+
+  const map = new Map<string, number>()
+
+  for (const post of posts) {
+    if (!post.category) continue
+
+    map.set(post.category, (map.get(post.category) ?? 0) + 1)
+  }
+
+  return Array.from(map.entries()).map(([name, count]) => ({
+    name,
+    count,
+  }))
 }
 
 function _buildBlock(blockObject: responses.BlockObject): Block {

@@ -1,0 +1,33 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import { getPostsByTagAndPage } from "../../../lib/notion";
+
+const CATEGORY = "game";
+const TOTAL_PAGES = 3;
+
+export async function getStaticPaths() {
+  return Array.from({ length: TOTAL_PAGES }, (_, i) => ({
+    params: { page: String(i + 1) },
+  }));
+}
+
+const page = Number(Astro.params.page);
+const posts = await getPostsByTagAndPage(CATEGORY, page);
+---
+
+<Layout title={`Game - Page ${page}`}>
+  <h1>Game（Page {page}）</h1>
+
+  <ul>
+    {posts.map((post) => (
+      <li>
+        <a href={`/game/${post.slug}`}>{post.title}</a>
+      </li>
+    ))}
+  </ul>
+
+  <nav>
+    {page > 1 && <a href={`/game/page/${page - 1}`}>Prev</a>}
+    {page < TOTAL_PAGES && <a href={`/game/page/${page + 1}`}>Next</a>}
+  </nav>
+</Layout>

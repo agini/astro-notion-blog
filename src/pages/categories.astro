@@ -1,0 +1,20 @@
+---
+import Layout from "../layouts/Layout.astro"
+import { getAllCategories } from "../lib/notion"
+
+const categories = await getAllCategories()
+---
+
+<Layout title="カテゴリ一覧">
+  <h1>カテゴリ一覧</h1>
+
+  <ul>
+    {categories.map((cat) => (
+      <li>
+        <a href={`/${cat.name}`}>
+          {cat.name} ({cat.count})
+        </a>
+      </li>
+    ))}
+  </ul>
+</Layout>
