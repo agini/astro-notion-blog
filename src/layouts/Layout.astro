@@ -525,10 +525,10 @@ if (database.Icon && database.Icon.Type === 'file') {
 
   /* Sidebar section headings */
 .sidebar h2 {
-  color: #eaf6ff;                 /* ほぼ白寄り */
+  color: #7dd3ff; /* 明るいシアン */
   font-size: 0.7rem;              /* 少しだけ上げる */
-  font-weight: 600;
-  letter-spacing: 0.18em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 
   padding: 0.4rem 0.5rem 0.35rem;
@@ -637,7 +637,7 @@ if (database.Icon && database.Icon.Type === 'file') {
     list-style: none;
     cursor: pointer;
 
-    color: #f1f7fb;
+    color: #ffd27d; /* アンバー */
     font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 0.15em;
@@ -784,4 +784,68 @@ if (database.Icon && database.Icon.Type === 'file') {
   .sidebar::after {
     display: none;
   }
+
+   /* ===============================
+      Sidebar : Warm Amber HUD Accent
+      =============================== */
+
+  /* サイドバー全体の文字色ベース */
+  .sidebar {
+    color: #eaf4ff;
+  }
+
+  /* ▶「カテゴリを表示」（summary） */
+  .sidebar summary {
+    color: #ffd27d; /* アンバー */
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+
+  /* hover時に少し発光 */
+  .sidebar summary:hover {
+    color: #ffe3a3;
+    text-shadow: 0 0 6px rgba(255, 210, 125, 0.45);
+  }
+
+  /* ▶ サイドバー内 見出し（Categories / Recommendedなど） */
+  .sidebar h2 {
+    color: #ffcc80; /* 落ち着いたアンバー */
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  /* ▶ 記事リンク */
+  .blog-posts-link ul li a {
+    color: #f5f9ff;
+  }
+
+  .blog-posts-link ul li a:hover {
+    color: #ffffff;
+  }
+
+  /* ▶ カテゴリ（タグ） */
+  .blog-tags-link ul li {
+    border-left: 3px solid rgba(255, 210, 125, 0.45);
+    padding-left: 0.6rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .blog-tags-link ul li a {
+    color: #fff4dc; /* 白＋アンバー寄り */
+    font-weight: 600;
+  }
+
+  /* hover時にHUDっぽく反応 */
+  .blog-tags-link ul li:hover {
+    background: rgba(255, 210, 125, 0.12);
+    border-left-color: #ffd27d;
+  }
+
+  .blog-tags-link ul li:hover a {
+    color: #ffffff;
+  }
+
 </style>
