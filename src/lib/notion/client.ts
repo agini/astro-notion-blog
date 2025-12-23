@@ -136,6 +136,37 @@ export async function getAllPosts(): Promise<Post[]> {
   return postsCache
 }
 
+// 全カテゴリと記事数を取得
+export async function getCategoryCounts(): Promise<
+  { name: string; count: number }[]
+> {
+  const res = await client.databases.query({
+    database_id: DATABASE_ID,
+  });
+
+  const map = new Map<string, number>();
+
+  for (const page of res.results) {
+    const prop = page.properties.Category;
+
+    if (prop?.type === "select" && prop.select) {
+      const name = prop.select.name;
+      map.set(name, (map.get(name) ?? 0) + 1);
+    }
+
+    if (prop?.type === "multi_select") {
+      for (const tag of prop.multi_select) {
+        map.set(tag.name, (map.get(tag.name) ?? 0) + 1);
+      }
+    }
+  }
+
+  return Array.from(map.entries()).map(([name, count]) => ({
+    name,
+    count,
+  }));
+}
+
 // Return total post count for a tag
 export async function getPostCountByTag(tag: string): Promise<number> {
   const res = await client.databases.query({
