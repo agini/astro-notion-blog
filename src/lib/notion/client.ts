@@ -136,10 +136,26 @@ export async function getAllPosts(): Promise<Post[]> {
   return postsCache
 }
 
+// Return total post count for a tag
+export async function getPostCountByTag(tag: string): Promise<number> {
+  const res = await client.databases.query({
+    database_id: process.env.DATABASE_ID!,
+    filter: {
+      property: "Tags",
+      multi_select: {
+        contains: tag,
+      },
+    },
+  })
+
+  return res.results.length
+}
+
 export async function getPosts(pageSize = 10): Promise<Post[]> {
   const allPosts = await getAllPosts()
   return allPosts.slice(0, pageSize)
 }
+
 
 export async function getRankedPosts(pageSize = 10): Promise<Post[]> {
   const allPosts = await getAllPosts()

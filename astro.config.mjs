@@ -7,8 +7,7 @@ import CoverImageDownloader from './src/integrations/cover-image-downloader';
 import CustomIconDownloader from './src/integrations/custom-icon-downloader';
 import FeaturedImageDownloader from './src/integrations/featured-image-downloader';
 import PublicNotionCopier from './src/integrations/public-notion-copier';
-import 'dotenv/config'
-import { defineConfig } from 'astro/config'
+import path from "path"
 
 const getSite = function () {
   if (CUSTOM_DOMAIN) {
@@ -47,4 +46,12 @@ export default defineConfig({
     FeaturedImageDownloader(),
     PublicNotionCopier(),
   ],
+
+  vite: {
+    resolve: {
+      alias: {
+        "@lib": path.resolve("./src/lib"),
+      },
+    },
+  },
 });

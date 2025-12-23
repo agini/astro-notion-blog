@@ -1,18 +1,23 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
-import { getPostsByTagAndPage } from "../../../lib/notion";
-
-const CATEGORY = "game";
-const TOTAL_PAGES = 3;
+import { getPostCountByTag, getPostsByTagAndPage } from "@lib/notion";
+import { POSTS_PER_PAGE, GAME_CATEGORY } from "@lib/constants";
 
 export async function getStaticPaths() {
-  return Array.from({ length: TOTAL_PAGES }, (_, i) => ({
+  const totalCount = await getPostCountByTag(GAME_CATEGORY);
+  const totalPages = Math.ceil(totalCount / POSTS_PER_PAGE);
+
+  return Array.from({ length: totalPages }, (_, i) => ({
     params: { page: String(i + 1) },
   }));
 }
 
 const page = Number(Astro.params.page);
-const posts = await getPostsByTagAndPage(CATEGORY, page);
+const posts = await getPostsByTagAndPage(GAME_CATEGORY, page);
+
+// 表示用に再計算（nav用）
+const totalCount = await getPostCountByTag(GAME_CATEGORY);
+const TOTAL_PAGES = Math.ceil(totalCount / POSTS_PER_PAGE);
 ---
 
 <Layout title={`Game - Page ${page}`}>
