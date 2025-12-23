@@ -370,6 +370,8 @@ if (database.Icon && database.Icon.Type === 'file') {
     --font-mono:
       SFMono-Regular, Menlo, Consolas, 'PT Mono', 'Liberation Mono', Courier,
       monospace;
+    
+    --sidebar-heading: #4fc3f7;
   }
 
   * {
@@ -846,6 +848,119 @@ if (database.Icon && database.Icon.Type === 'file') {
 
   .blog-tags-link ul li:hover a {
     color: #ffffff;
+  }
+
+    /* ===============================
+    Sidebar : High-Contrast Dark HUD
+    =============================== */
+
+  /* サイドバー基準文字色 */
+  .sidebar {
+    color: #d9e2ea; /* 純白を避けたHUDグレー */
+  }
+
+  /* ▶ summary（カテゴリを表示） */
+  .sidebar summary {
+    color: #eef3f7; /* ほぼ白だが少しグレー */
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  /* hover時のみアンバー */
+  .sidebar summary:hover {
+    color: #ffd27d;
+    text-shadow: 0 0 4px rgba(255, 210, 125, 0.35);
+  }
+
+  /* ▶ サイドバー見出し（Categoriesなど） */
+  .sidebar h2 {
+    color: #9fd3e6; /* 青×緑寄り（背景と被らない） */
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  /* ▶ 記事リンク */
+  .blog-posts-link ul li a {
+    color: #e6edf3;
+  }
+
+  .blog-posts-link ul li a:hover {
+    color: #ffffff;
+  }
+
+  /* ▶ カテゴリ（タグ一覧） */
+  .blog-tags-link ul li {
+    border-left: 3px solid rgba(159, 211, 230, 0.45);
+    padding-left: 0.6rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .blog-tags-link ul li a {
+    color: #4fc3f7;
+    font-weight: 600;
+  }
+
+  /* hover時だけアクセント */
+  .blog-tags-link ul li:hover {
+    background: rgba(159, 211, 230, 0.12);
+    border-left-color: #ffd27d; /* アンバーはここだけ */
+  }
+
+  .blog-tags-link ul li:hover a {
+    color: #ffffff;
+  }
+
+    /* ===============================
+    Sidebar Category Tags Unified
+    =============================== */
+
+  /* li をタグの見た目本体にする */
+  .blog-tags-link ul li {
+    background: rgba(159, 211, 230, 0.08);
+    border-left: 3px solid rgba(159, 211, 230, 0.45);
+    padding: 0.4rem 0.6rem;
+    margin-bottom: 0.35rem;
+  }
+
+  /* a.tag の装飾を完全に殺す */
+  .blog-tags-link ul li a.tag {
+    background: transparent !important;
+    border: none !important;
+    padding: 0;
+    margin: 0;
+
+    color: inherit;          /* ← liの色を使う */
+    font-weight: 600;
+    display: block;
+  }
+
+  /* Notion由来の色クラスを無効化 */
+  .blog-tags-link a.tag.blue,
+  .blog-tags-link a.tag.orange,
+  .blog-tags-link a.tag.default {
+    background: transparent !important;
+    color: inherit !important;
+  }
+
+  /* hover時：liごと反応させる */
+  .blog-tags-link ul li:hover {
+    background: rgba(159, 211, 230, 0.18);
+    border-left-color: #ffd27d; /* アンバーは操作時だけ */
+  }
+
+  .blog-tags-link ul li:hover a {
+    color: #ffffff;
+  }
+
+  .sidebar summary {
+    color: var(--sidebar-heading);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  .sidebar .blog-tags-link h2 {
+    color: var(--sidebar-heading);
   }
 
 </style>
