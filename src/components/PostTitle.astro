@@ -8,11 +8,11 @@ export interface Props {
 }
 
 const { post, enableLink = true } = Astro.props
-
+const Tag = enableLink ? 'h2' : 'h1'
 let title = post.Title
 ---
 
-<h2 class="post-title">
+<Tag class="post-title">
   {
     enableLink ? (
       <a href={getPostLink(post.Slug)}>
@@ -48,7 +48,7 @@ let title = post.Title
       </>
     )
   }
-</h2>
+</Tag>
 
 <style>
   .post-title {

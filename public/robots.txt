@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://astro-notion-blog-7oz.pages.dev/sitemap.xml
