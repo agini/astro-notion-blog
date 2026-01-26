@@ -1,0 +1,15 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getPostsByTagAndPage } from "../../../lib/notion";
+const posts = await getPostsByTagAndPage("books");
+---
+
+<h1>読書ログ</h1>
+
+<ul>
+  {posts.map((post) => (
+    <li>
+      <a href={`/log/${post.slug}`}>{post.title}</a>
+    </li>
+  ))}
+</ul>
