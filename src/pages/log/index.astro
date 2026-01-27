@@ -1,10 +1,12 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { getPostsByTagAndPage } from "../../lib/notion";
-const posts = await getPostsByTagAndPage("experience");
+
+// ★ page は必ず 1 を渡す
+const posts = await getPostsByTagAndPage("experience", 1);
 ---
 
-<h1>体験log</h1>
+<h1>体験ログ</h1>
 
 <ul>
   {posts.map((post) => (

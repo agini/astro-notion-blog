@@ -3,7 +3,8 @@ import Layout from "../../layouts/Layout.astro";
 import { getPostsByTagAndPage } from "../../lib/notion";
 
 export async function getStaticPaths() {
-  const posts = await getPostsByTagAndPage("experience");
+  // ★ ここも page=1 必須
+  const posts = await getPostsByTagAndPage("experience", 1);
 
   return posts.map((post) => ({
     params: { slug: post.slug },
