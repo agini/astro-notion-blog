@@ -1,9 +1,6 @@
 ---
-import Layout from "../../layouts/Layout.astro";
 import { getPostsByTagAndPage } from "../../lib/notion";
-
-// ★ page は必ず 1 を渡す
-const posts = await getPostsByTagAndPage("experience", 1);
+const posts = await getPostsByTagAndPage("experience");
 ---
 
 <h1>体験ログ</h1>
@@ -11,7 +8,7 @@ const posts = await getPostsByTagAndPage("experience", 1);
 <ul>
   {posts.map((post) => (
     <li>
-      <a href={`/log/${post.slug}`}>{post.title}</a>
+      <a href={`/game/${post.slug}`}>{post.title}</a>
     </li>
   ))}
 </ul>

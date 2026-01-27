@@ -3,13 +3,19 @@ import Layout from "../../layouts/Layout.astro";
 import { getPostsByTagAndPage } from "../../lib/notion";
 
 export async function getStaticPaths() {
-  // ★ ここも page=1 必須
   const posts = await getPostsByTagAndPage("experience", 1);
 
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: { post },
-  }));
+  console.log(
+    "log posts:",
+    posts.map(p => ({ title: p.title, slug: p.slug }))
+  );
+
+  return posts
+    .filter((post) => post.slug) // ★ これが超重要
+    .map((post) => ({
+      params: { slug: post.slug },
+      props: { post },
+    }));
 }
 
 const { post } = Astro.props;
@@ -18,6 +24,6 @@ const { post } = Astro.props;
 <Layout title={post.title}>
   <article>
     <h1>{post.title}</h1>
-    <Content content={post.content} />
+    <pre>{JSON.stringify(post.content, null, 2)}</pre>
   </article>
 </Layout>

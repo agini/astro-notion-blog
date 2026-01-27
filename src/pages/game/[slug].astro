@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import { getPostsByTagAndPage } from "../../lib/notion";
 
 export async function getStaticPaths() {
-  const posts = await getPostsByTagAndPage("game");
+  const posts = await getPostsByTagAndPage("game", 1);
 
   return posts.map((post) => ({
     params: { slug: post.slug },
@@ -17,6 +17,8 @@ const { post } = Astro.props;
 <Layout title={post.title}>
   <article>
     <h1>{post.title}</h1>
-    <Content content={post.content} />
+
+    <!-- デバッグ兼 本文確認用 -->
+    <pre>{JSON.stringify(post.content, null, 2)}</pre>
   </article>
 </Layout>
