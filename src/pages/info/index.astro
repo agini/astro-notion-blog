@@ -1,0 +1,14 @@
+---
+import { getPostsByTagAndPage } from "../../lib/notion";
+const posts = await getPostsByTagAndPage("info");
+---
+
+<h1>info</h1>
+
+<ul>
+  {posts.map((post) => (
+    <li>
+      <a href={`/info/${post.slug}`}>{post.title}</a>
+    </li>
+  ))}
+</ul>

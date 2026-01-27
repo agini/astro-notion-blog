@@ -120,16 +120,30 @@ if (database.Icon && database.Icon.Type === 'file') {
       </div>
     )}
 
-    <div class="container">
-    <!-- Main Content Wrapper (Sidebar and Main) -->
-    <div class="main-content-wrapper">
-      <aside class="sidebar">
-        <details>
-          <summary>カテゴリを表示</summary>
-            <SearchButton />
-          <slot name="aside" />
-        </details>
-      </aside>
+  <div class="container">
+  <!-- Main Content Wrapper (Sidebar and Main) -->
+  <div class="main-content-wrapper">
+    <aside class="sidebar">
+      <details>
+        <summary>メニューを表示</summary>
+
+        <!-- 固定リンク（最小追加） -->
+        <nav class="sidebar-fixed">
+        <ul>
+          <li>
+            <a href="/game">🎮 ゲーム</a>
+          </li>
+          <li>
+            <a href="/log">📝 体験ログ</a>
+          </li>
+        </ul>
+        </nav>
+
+        <SearchButton />
+        <slot name="aside" />
+      </details>
+    </aside>
+
     
           <!-- ➤ Main content -->
         <main>
