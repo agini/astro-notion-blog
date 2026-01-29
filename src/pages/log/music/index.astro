@@ -2,14 +2,14 @@
 import Layout from "../../../layouts/Layout.astro";
 import { getPostsByTagAndPage } from "../../../lib/notion";
 
-const posts = await getPostsByTagAndPage("movie", 1);
+const posts = await getPostsByTagAndPage("music", 1);
 ---
 
-<Layout title="映画ログ">
-  <h1>🎬 映画ログ</h1>
+<Layout title="音楽ログ">
+  <h1>🎵 音楽ログ</h1>
 
   {posts.length === 0 ? (
-    <p>まだ映画ログはありません</p>
+    <p>まだ音楽ログはありません</p>
   ) : (
     <ul>
       {posts.map((post) => (

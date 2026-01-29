@@ -1,15 +1,22 @@
 ---
-import Layout from "../../layouts/Layout.astro";
+import Layout from "../../../layouts/Layout.astro";
 import { getPostsByTagAndPage } from "../../../lib/notion";
-const posts = await getPostsByTagAndPage("books");
+
+const posts = await getPostsByTagAndPage("book", 1);
 ---
 
-<h1>読書ログ</h1>
+<Layout title="読書ログ">
+  <h1>📚 読書ログ</h1>
 
-<ul>
-  {posts.map((post) => (
-    <li>
-      <a href={`/log/${post.slug}`}>{post.title}</a>
-    </li>
-  ))}
-</ul>
+  {posts.length === 0 ? (
+    <p>まだ読書ログはありません</p>
+  ) : (
+    <ul>
+      {posts.map((post) => (
+        <li>
+          <a href={`/log/${post.slug}`}>{post.title}</a>
+        </li>
+      ))}
+    </ul>
+  )}
+</Layout>
