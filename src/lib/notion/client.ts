@@ -244,19 +244,22 @@ export async function getPostsByTagAndPage(
   tagName: string,
   page: number
 ): Promise<Post[]> {
-  if (page < 1) {
-    return []
-  }
+  // Ensure page is valid
+  const currentPage = page && page > 0 ? page : 1
 
   const allPosts = await getAllPosts()
-  const posts = allPosts.filter((post) =>
-    post.Tags.find((tag) => tag.name === tagName)
+
+  // Filter posts by tag safely
+  const filteredPosts = allPosts.filter(
+    (post) =>
+      Array.isArray(post.Tags) &&
+      post.Tags.some((tag) => tag.name === tagName)
   )
 
-  const startIndex = (page - 1) * NUMBER_OF_POSTS_PER_PAGE
+  const startIndex = (currentPage - 1) * NUMBER_OF_POSTS_PER_PAGE
   const endIndex = startIndex + NUMBER_OF_POSTS_PER_PAGE
 
-  return posts.slice(startIndex, endIndex)
+  return filteredPosts.slice(startIndex, endIndex)
 }
 
 export async function getTotalPagesByTag(
