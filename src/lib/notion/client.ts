@@ -231,7 +231,9 @@ export async function getPostsByPage(page: number): Promise<Post[]> {
     return []
   }
 
-  const allPosts = await getAllPosts()
+  const allPosts = (await getAllPosts()).filter(
+    (post) => post.slug
+  )
 
   const startIndex = (page - 1) * NUMBER_OF_POSTS_PER_PAGE
   const endIndex = startIndex + NUMBER_OF_POSTS_PER_PAGE
@@ -244,14 +246,13 @@ export async function getPostsByTagAndPage(
   tagName: string,
   page: number
 ): Promise<Post[]> {
-  // Ensure page is valid
   const currentPage = page && page > 0 ? page : 1
 
   const allPosts = await getAllPosts()
 
-  // Filter posts by tag safely
   const filteredPosts = allPosts.filter(
     (post) =>
+      post.slug &&
       Array.isArray(post.Tags) &&
       post.Tags.some((tag) => tag.name === tagName)
   )
@@ -262,35 +263,43 @@ export async function getPostsByTagAndPage(
   return filteredPosts.slice(startIndex, endIndex)
 }
 
+
 export async function getTotalPagesByTag(
   tagName: string
 ): Promise<number> {
   const posts = await getAllPosts()
+
   const filtered = posts.filter(
-    (post) => post.category === tagName
+    (post) =>
+      post.slug &&
+      Array.isArray(post.Tags) &&
+      post.Tags.some((tag) => tag.name === tagName)
   )
 
-  const postsPerPage = 10
-  return Math.ceil(filtered.length / postsPerPage)
+  return Math.ceil(filtered.length / NUMBER_OF_POSTS_PER_PAGE)
 }
 
 export async function getNumberOfPages(): Promise<number> {
-  const allPosts = await getAllPosts()
-  return (
-    Math.floor(allPosts.length / NUMBER_OF_POSTS_PER_PAGE) +
-    (allPosts.length % NUMBER_OF_POSTS_PER_PAGE > 0 ? 1 : 0)
+  const allPosts = (await getAllPosts()).filter(
+    (post) => post.slug
   )
+
+  return Math.ceil(allPosts.length / NUMBER_OF_POSTS_PER_PAGE)
 }
 
-export async function getNumberOfPagesByTag(tagName: string): Promise<number> {
+export async function getNumberOfPagesByTag(
+  tagName: string
+): Promise<number> {
   const allPosts = await getAllPosts()
-  const posts = allPosts.filter((post) =>
-    post.Tags.find((tag) => tag.name === tagName)
+
+  const posts = allPosts.filter(
+    (post) =>
+      post.slug &&
+      Array.isArray(post.Tags) &&
+      post.Tags.some((tag) => tag.name === tagName)
   )
-  return (
-    Math.floor(posts.length / NUMBER_OF_POSTS_PER_PAGE) +
-    (posts.length % NUMBER_OF_POSTS_PER_PAGE > 0 ? 1 : 0)
-  )
+
+  return Math.ceil(posts.length / NUMBER_OF_POSTS_PER_PAGE)
 }
 
 export async function getAllBlocksByBlockId(blockId: string): Promise<Block[]> {
