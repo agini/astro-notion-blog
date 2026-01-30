@@ -20,3 +20,15 @@
   padding: 0;
   border: 0;
 }
+
+.imageWrapper {
+  text-align: center; /* 子 img を中央寄せ */
+  margin: 1rem 0;     /* 上下に余白を追加 */
+}
+
+.workImage {
+  display: inline-block; /* text-align の中央寄せを効かせる */
+  max-width: 100%;       /* コンテナ幅を超えないように */
+  height: auto;
+}
+

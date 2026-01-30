@@ -1,4 +1,5 @@
 ---
+
 import * as interfaces from '../../lib/interfaces.ts'
 import {
   getPosts,
@@ -37,6 +38,8 @@ const post = await getPostBySlug(slug)
 if (!post) {
   throw new Error(`Post not found. slug: ${slug}`)
 }
+
+console.log('posts slug WorkImage:', post.WorkImage)
 
 // Fetch blocks and related posts
 const [blocks, allPosts, rankedPosts, recentPosts, tags, postsHavingSameTag] =
@@ -119,10 +122,20 @@ const nextPost = allPosts[currentPostIndex - 1]
 
   <div slot="main" class={styles.main}>
     <div class={styles.post}>
+      
       <!-- Display post date and tags -->
       <PostDate post={post} />
       <PostTags post={post} />
       <PostTitle post={post} enableLink={false} />
+      
+      <div class={styles.imageWrapper}>
+        <img
+          src={post.WorkImage?.Url ?? "/images/no-image.png"}
+          alt={post.Title}
+          class={styles.workImage}
+        />
+      </div>
+      
       <PostBody blocks={blocks} />
       <PostTags post={post} />
 

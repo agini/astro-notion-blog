@@ -15,6 +15,8 @@ export interface Post {
   Tags: SelectProperty[]
   Excerpt: string
   FeaturedImage: FileObject | null
+
+  WorkImage: FileObject | null
   Rank: number
 }
 

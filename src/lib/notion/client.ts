@@ -1022,6 +1022,10 @@ function _validPageObject(pageObject: responses.PageObject): boolean {
 function _buildPost(pageObject: responses.PageObject): Post {
   const prop = pageObject.properties
 
+  const workImageProp = prop.WorkImage;
+
+  console.log('WorkImage raw:', prop.WorkImage)
+
   let icon: FileObject | Emoji | null = null
   if (pageObject.icon) {
     if (pageObject.icon.type === 'emoji' && 'emoji' in pageObject.icon) {
@@ -1064,7 +1068,35 @@ function _buildPost(pageObject: responses.PageObject): Post {
     }
   }
 
-  const post: Post = {
+  let workImage: FileObject | null = null
+
+  const isMovie =
+    prop.Tags.multi_select?.some(tag => tag.name === '映画') ?? false
+
+  if (prop.WorkImage?.type === 'files') {
+    const file = prop.WorkImage.files?.[0]
+
+    if (file?.external?.url) {
+      workImage = {
+        Type: 'external',
+        Url: file.external.url,
+      }
+    } else if (file?.file?.url) {
+      workImage = {
+        Type: 'file',
+        Url: file.file.url,
+        ExpiryTime: file.file.expiry_time,
+      }
+    } else if (isMovie) {
+      // ★ 映画記事は必ず画像を持たせる
+      workImage = {
+        Type: 'external',
+        Url: '/images/no-image.png',
+      }
+    }
+  }
+
+    const post: Post = {
     PageId: pageObject.id,
     Title: prop.Page.title
       ? prop.Page.title.map((richText) => richText.plain_text).join('')
@@ -1081,6 +1113,7 @@ function _buildPost(pageObject: responses.PageObject): Post {
         ? prop.Excerpt.rich_text.map((richText) => richText.plain_text).join('')
         : '',
     FeaturedImage: featuredImage,
+    WorkImage: workImage,
     Rank: prop.Rank.number ? prop.Rank.number : 0,
   }
 
