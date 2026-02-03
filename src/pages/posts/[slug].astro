@@ -39,8 +39,6 @@ if (!post) {
   throw new Error(`Post not found. slug: ${slug}`)
 }
 
-console.log('posts slug WorkImage:', post.WorkImage)
-
 // Fetch blocks and related posts
 const [blocks, allPosts, rankedPosts, recentPosts, tags, postsHavingSameTag] =
   await Promise.all([

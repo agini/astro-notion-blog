@@ -251,11 +251,19 @@ export async function getPostsByTagAndPage(
   const allPosts = await getAllPosts()
 
   const filteredPosts = allPosts.filter(
-    (post) =>
-      post.slug &&
-      Array.isArray(post.Tags) &&
-      post.Tags.some((tag) => tag.name === tagName)
-  )
+  (post) =>
+    post.Slug &&
+    Array.isArray(post.Tags) &&
+    post.Tags.some((tag) => tag.name === tagName)
+)
+
+console.log(
+  "filtered experience:",
+  filteredPosts.map(p => ({
+    slug: p.Slug,
+    tags: p.Tags.map(t => t.name),
+  }))
+)
 
   const startIndex = (currentPage - 1) * NUMBER_OF_POSTS_PER_PAGE
   const endIndex = startIndex + NUMBER_OF_POSTS_PER_PAGE
@@ -1024,8 +1032,6 @@ function _buildPost(pageObject: responses.PageObject): Post {
 
   const workImageProp = prop.WorkImage;
 
-  console.log('WorkImage raw:', prop.WorkImage)
-
   let icon: FileObject | Emoji | null = null
   if (pageObject.icon) {
     if (pageObject.icon.type === 'emoji' && 'emoji' in pageObject.icon) {
@@ -1116,6 +1122,8 @@ function _buildPost(pageObject: responses.PageObject): Post {
     WorkImage: workImage,
     Rank: prop.Rank.number ? prop.Rank.number : 0,
   }
+
+  console.log("post.Tags raw:", prop.Tags.multi_select);
 
   return post
 }

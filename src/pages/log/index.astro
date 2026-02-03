@@ -1,6 +1,7 @@
 ---
 import { getPostsByTagAndPage } from "../../lib/notion";
-const posts = await getPostsByTagAndPage("experience");
+
+const posts = await getPostsByTagAndPage("experience", 1);
 ---
 
 <h1>体験ログ</h1>
@@ -8,7 +9,7 @@ const posts = await getPostsByTagAndPage("experience");
 <ul>
   {posts.map((post) => (
     <li>
-      <a href={`/game/${post.slug}`}>{post.title}</a>
+      <a href={`/log/${post.Slug}`}>{post.Title}</a>
     </li>
   ))}
 </ul>
