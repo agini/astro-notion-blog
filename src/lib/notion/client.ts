@@ -254,8 +254,10 @@ export async function getPostsByTagAndPage(
   (post) =>
     post.Slug &&
     Array.isArray(post.Tags) &&
-    post.Tags.some((tag) => tag.name === tagName)
-)
+    post.Tags.some(
+      (tag) => tag.name === "experience" || tag.name === "GAME"
+    )
+);
 
 console.log(
   "filtered experience:",
