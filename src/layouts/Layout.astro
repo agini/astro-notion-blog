@@ -14,6 +14,7 @@ export interface Props {
   ogImage?: string
   cover?: string
   coverType?: 'image' | 'iframe'
+  noindex?: boolean
 }
 
 const {
@@ -23,6 +24,7 @@ const {
   ogImage = '',
   cover,
   coverType = 'image',
+  noindex = false,
 } = Astro.props
 
 const database = await getDatabase()
@@ -70,7 +72,11 @@ if (database.Icon && database.Icon.Type === 'file') {
 <html lang="ja" prefix="og: https://ogp.me/ns#">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="max-image-preview:large" />
+    {noindex ? (
+      <meta name="robots" content="noindex,follow" />
+    ) : (
+      <meta name="robots" content="max-image-preview:large" />
+    )}
     <meta charset="UTF-8" />
     <meta name="generator" content={Astro.generator} />
     <title>{siteTitle}</title>
@@ -206,6 +212,7 @@ if (database.Icon && database.Icon.Type === 'file') {
         <script src={getStaticFilePath('/scripts/fslightbox.js')} />
       )
     }
+    
   </body>
 </html>
 

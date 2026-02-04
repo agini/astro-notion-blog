@@ -1,6 +1,6 @@
 ---
 
-import * as interfaces from '../../lib/interfaces.ts'
+import * as interfaces from '../lib/interfaces'
 import {
   getPosts,
   getAllPosts,
@@ -11,21 +11,21 @@ import {
   getAllTags,
   getAllBlocksByBlockId,
   downloadFile,
-} from '../../lib/notion/client.ts'
+} from '../lib/notion/client'
 import {
   getPostLink,
   filePath,
   extractTargetBlocks,
-} from '../../lib/blog-helpers.ts'
-import Layout from '../../layouts/Layout.astro'
-import PostDate from '../../components/PostDate.astro'
-import PostTags from '../../components/PostTags.astro'
-import PostTitle from '../../components/PostTitle.astro'
-import PostBody from '../../components/PostBody.astro'
-import PostRelativeLink from '../../components/PostRelativeLink.astro'
-import BlogPostsLink from '../../components/BlogPostsLink.astro'
-import BlogTagsLink from '../../components/BlogTagsLink.astro'
-import styles from '../../styles/blog.module.css'
+} from '../lib/blog-helpers'
+import Layout from '../layouts/Layout.astro'
+import PostDate from '../components/PostDate.astro'
+import PostTags from '../components/PostTags.astro'
+import PostTitle from '../components/PostTitle.astro'
+import PostBody from '../components/PostBody.astro'
+import PostRelativeLink from '../components/PostRelativeLink.astro'
+import BlogPostsLink from '../components/BlogPostsLink.astro'
+import BlogTagsLink from '../components/BlogTagsLink.astro'
+import styles from '../styles/blog.module.css'
 
 export async function getStaticPaths() {
   const posts = await getAllPosts()
@@ -39,16 +39,24 @@ if (!post) {
   throw new Error(`Post not found. slug: ${slug}`)
 }
 
-// Fetch blocks and related posts
-const [blocks, allPosts, rankedPosts, recentPosts, tags, postsHavingSameTag] =
-  await Promise.all([
-    getAllBlocksByBlockId(post.PageId),
-    getAllPosts(),
-    getRankedPosts(),
-    getPosts(5),
-    getAllTags(),
-    getPostsByTag(post.Tags[0]?.name, 6),
-  ])
+const isPage = post.PageType === 'page'
+
+const blocks = await getAllBlocksByBlockId(post.PageId)
+
+let rankedPosts = []
+let recentPosts = []
+let tags = []
+let postsHavingSameTag = []
+
+if (!isPage) {
+  ;[rankedPosts, recentPosts, tags, postsHavingSameTag] =
+    await Promise.all([
+      getRankedPosts(),
+      getPosts(5),
+      getAllTags(),
+      getPostsByTag(post.Tags[0]?.name, 6),
+    ])
+}
 
 /// ➤ NEW: Determine OG image for social sharing
 let ogImage = ''
@@ -106,7 +114,11 @@ if (post.Cover?.Url) {
   cover = filePath(new URL(post.Cover.Url))
 }
 
-const currentPostIndex = allPosts.findIndex((post) => post.Slug === slug)
+const allPosts = isPage ? [] : await getAllPosts()
+
+const currentPostIndex = allPosts.findIndex(
+  (p: interfaces.Post) => p.Slug === slug
+)
 const prevPost = allPosts[currentPostIndex + 1]
 const nextPost = allPosts[currentPostIndex - 1]
 ---
@@ -120,12 +132,11 @@ const nextPost = allPosts[currentPostIndex - 1]
   >
 
   <div slot="main" class={styles.main}>
-    <div class={styles.post}>
-      
       <!-- Display post date and tags -->
-      <PostDate post={post} />
-      <PostTags post={post} />
-      <PostTitle post={post} enableLink={false} />
+      <article class={styles.post}>
+        {!isPage && <PostDate post={post} />}
+        {!isPage && <PostTags post={post} />}
+        <PostTitle post={post} enableLink={false} />
       
       <div class={styles.imageWrapper}>
         <img
@@ -136,24 +147,22 @@ const nextPost = allPosts[currentPostIndex - 1]
       </div>
       
       <PostBody blocks={blocks} />
-      <PostTags post={post} />
-
-      <footer>
-        <PostRelativeLink prevPost={prevPost} nextPost={nextPost} />
-      </footer>
-    </div>
+          {!isPage && <PostTags post={post} />}
+        {!isPage && (
+          <footer>
+            <PostRelativeLink prevPost={prevPost} nextPost={nextPost} />
+          </footer>
+        )}
+      </article>
   </div>
 
   <!-- Sidebar slot -->
-  <div slot="aside" class="aside">
-    <BlogPostsLink
-      heading="Posts in the same category"
-      posts={postsHavingSameTag.filter(
-        (p: interfaces.Post) => p.Slug !== post.Slug
-      )}
-    />
-    <BlogPostsLink heading="Recommended" posts={rankedPosts} />
-    <BlogPostsLink heading="Latest posts" posts={recentPosts} />
-    <BlogTagsLink heading="Tags" tags={tags} />
+  {!isPage && (
+    <div slot="aside" class="aside">
+      <BlogPostsLink heading="Recommended" posts={rankedPosts} />
+      <BlogPostsLink heading="Latest posts" posts={recentPosts} />
+      <BlogTagsLink heading="Tags" tags={tags} />
+    </div>
+  )}
   </div>
 </Layout>

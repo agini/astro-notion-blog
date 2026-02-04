@@ -133,6 +133,7 @@ export async function getAllPosts(): Promise<Post[]> {
   postsCache = results
     .filter((pageObject) => _validPageObject(pageObject))
     .map((pageObject) => _buildPost(pageObject))
+    .filter((post) => post.PageType !== 'page')
   return postsCache
 }
 
