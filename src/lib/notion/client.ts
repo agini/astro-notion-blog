@@ -250,22 +250,23 @@ export async function getPostsByTagAndPage(
 
   const allPosts = await getAllPosts()
 
-  const filteredPosts = allPosts.filter(
+const filteredPosts = allPosts.filter(
   (post) =>
     post.Slug &&
     Array.isArray(post.Tags) &&
     post.Tags.some(
-      (tag) => tag.name === "experience" || tag.name === "GAME"
+      (tag) => tag.name.toLowerCase() === tagName.toLowerCase()
     )
 );
 
 console.log(
-  "filtered experience:",
+  "filtered",
+  tagName,
   filteredPosts.map(p => ({
     slug: p.Slug,
     tags: p.Tags.map(t => t.name),
   }))
-)
+);
 
   const startIndex = (currentPage - 1) * NUMBER_OF_POSTS_PER_PAGE
   const endIndex = startIndex + NUMBER_OF_POSTS_PER_PAGE

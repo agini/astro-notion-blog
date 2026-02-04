@@ -1,24 +1,25 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { getPostsByTagAndPage } from "../../lib/notion";
+import { getPostBySlug, getPostsByTagAndPage } from "../../lib/notion";
 
 export async function getStaticPaths() {
   const posts = await getPostsByTagAndPage("life", 1);
 
-  return posts
-    .filter(post => post.Slug)
-    .map((post) => ({
-      params: { slug: post.Slug },
-      props: { post },
-    }));
+  return posts.map((post) => ({
+    params: { slug: post.Slug },
+  }));
 }
 
-const { post } = Astro.props;
+const { slug } = Astro.params;
+const post = await getPostBySlug(slug);
+
+if (!post) {
+  throw new Error(`Post not found: ${slug}`);
+}
 ---
 
 <Layout title={post.Title}>
   <article>
     <h1>{post.Title}</h1>
-    <p>{post.Excerpt}</p>
   </article>
 </Layout>
