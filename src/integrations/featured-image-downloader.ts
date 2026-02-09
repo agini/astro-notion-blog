@@ -5,7 +5,7 @@ export default (): AstroIntegration => ({
   name: 'featured-image-downloader',
   hooks: {
     'astro:build:start': async () => {
-      const posts = await getAllPosts()
+      const posts = await getAllPosts() // ★ここが重要
 
       await Promise.all(
         posts.map((post) => {
@@ -13,11 +13,11 @@ export default (): AstroIntegration => ({
             return Promise.resolve()
           }
 
-          let url!: URL
+          let url: URL
           try {
             url = new URL(post.FeaturedImage.Url)
           } catch {
-            console.log('Invalid FeaturedImage URL: ', post.FeaturedImage?.Url)
+            console.log('Invalid FeaturedImage URL:', post.FeaturedImage?.Url)
             return Promise.resolve()
           }
 

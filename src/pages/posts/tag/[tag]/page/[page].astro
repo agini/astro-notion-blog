@@ -22,14 +22,18 @@ import '../../../../../styles/notion-color.css'
 
 export async function getStaticPaths() {
   const allTags = await getAllTags()
-
-  let params = []
+  const params = []
 
   await Promise.all(
-    allTags.map((tag: SelectProperty) => {
-      return getNumberOfPagesByTag(tag.name).then((numberOfPages: number) => {
+    allTags.map((tag: string) => {
+      return getNumberOfPagesByTag(tag).then((numberOfPages: number) => {
         for (let i = 2; i <= numberOfPages; i++) {
-          params.push({ params: { tag: tag.name, page: i.toString() } })
+          params.push({
+            params: {
+              tag,
+              page: i.toString(),
+            },
+          })
         }
       })
     })
@@ -47,7 +51,13 @@ const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
   getNumberOfPagesByTag(tag),
 ])
 
-const currentTag = posts[0].Tags.find((t) => t.name === tag)
+const currentTag =
+  posts.length > 0
+    ? posts[0].Tags.find(
+        (t) => t.name.toLowerCase() === tag.toLowerCase()
+      )
+    : null
+
 ---
 
 <Layout

@@ -22,8 +22,11 @@ import styles from '../../../styles/blog.module.css'
 import '../../../styles/notion-color.css'
 
 export async function getStaticPaths() {
-  const allTags = await getAllTags()
-  return allTags.map((tag: SelectProperty) => ({ params: { tag: tag.name } }))
+  const tags = await getAllTags()
+
+  return tags.map((tag: string) => ({
+    params: { tag },
+  }))
 }
 
 const { tag } = Astro.params
@@ -35,7 +38,12 @@ const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
   getNumberOfPagesByTag(tag),
 ])
 
-const currentTag = posts[0].Tags.find((t) => t.name === tag)
+const currentTag =
+  posts.length > 0
+    ? posts[0].Tags?.find((t) => t.name === tag)
+    : undefined
+
+const hasPosts = posts.length > 0
 ---
 
 <Layout title={`Posts in ${tag}`} path={`/posts/tag/${tag}`}>

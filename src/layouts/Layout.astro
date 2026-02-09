@@ -1,11 +1,13 @@
 ---
-import { PUBLIC_GA_TRACKING_ID, ENABLE_LIGHTBOX } from '../server-constants.ts'
-import { getDatabase } from '../lib/notion/client.ts'
-import { getNavLink, getStaticFilePath, filePath } from '../lib/blog-helpers.ts'
+import { PUBLIC_GA_TRACKING_ID, ENABLE_LIGHTBOX } from '../server-constants'
+import { getNavLink, getStaticFilePath, filePath } from '../lib/blog-helpers'
 import '../styles/syntax-coloring.css'
 import GoogleAnalytics from '../components/GoogleAnalytics.astro'
 import SearchModal from '../components/SearchModal.astro'
 import SearchButton from '../components/SearchButton.astro'
+import BlogPostsLink from '../components/BlogPostsLink.astro'
+import BlogTagsLink from '../components/BlogTagsLink.astro'
+import { getAllPosts, getAllPages, getDatabase } from '@/lib/notion/client'
 
 export interface Props {
   title?: string
@@ -27,6 +29,38 @@ const {
   noindex = false,
 } = Astro.props
 
+const allPosts = await getAllPosts()
+const allPages = await getAllPages()
+
+/* --- Posts --- */
+const posts = allPosts
+
+const informationPages = allPages.filter(
+  p => p.PageType === 'page'
+)
+
+/* --- Sidebar data --- */
+
+// ランキング（例：上位5件）
+const rankedPosts = allPosts
+  .filter(p => p.PageType === 'post')
+  .slice(0, 5)
+
+// 最近の投稿（例：最新5件）
+const recentPosts = allPosts
+  .filter(p => p.PageType === 'post')
+  .slice(0, 5)
+
+// タグ一覧（もし sidebar で使っているなら）
+const tags = Array.from(
+  new Set(
+    allPosts
+      .filter(p => p.PageType === 'post')
+      .flatMap(p => p.Tags ?? [])
+  )
+)
+
+/* --- Site meta --- */
 const database = await getDatabase()
 
 const siteTitle = title
@@ -36,6 +70,7 @@ const siteTitle = title
 const siteDescription = description || database.Description
 const siteURL = new URL(getNavLink(path), Astro.site).toString()
 
+/* --- Cover / OG --- */
 let coverImageURL: string | undefined
 if (database.Cover) {
   if (database.Cover.Type === 'external') {
@@ -44,29 +79,20 @@ if (database.Cover) {
     try {
       coverImageURL = filePath(new URL(database.Cover.Url))
     } catch {
-      console.log('Invalid DB cover image URL: ', database.Cover?.Url)
+      console.log('Invalid DB cover image URL:', database.Cover?.Url)
     }
   }
 }
 
-//FINAL decision
 const displayCover =
   cover ?? coverImageURL ?? '/cover/default.webp'
-  
+
 const siteOGImage = new URL(
   getStaticFilePath('/default-og-image.png'),
   Astro.site
 )
-
-let customIconURL: string
-if (database.Icon && database.Icon.Type === 'file') {
-  try {
-    customIconURL = filePath(new URL(database.Icon.Url))
-  } catch {
-    console.log('Invalid DB custom icon URL: ', database.Icon?.Url)
-  }
-}
 ---
+
 
 <!doctype html>
 <html lang="ja" prefix="og: https://ogp.me/ns#">
@@ -129,26 +155,38 @@ if (database.Icon && database.Icon.Type === 'file') {
   <div class="container">
   <!-- Main Content Wrapper (Sidebar and Main) -->
   <div class="main-content-wrapper">
-    <aside class="sidebar">
-      <details>
-        <summary>メニューを表示</summary>
+        <aside class="sidebar">
+          <details>
+            <summary>メニューを表示</summary>
 
-        <!-- 固定リンク（最小追加） -->
-        <nav class="sidebar-fixed">
-        <ul>
-          <li>
-            <a href="/game">🎮 ゲーム</a>
-          </li>
-          <li>
-            <a href="/log">📝 体験ログ</a>
-          </li>
-        </ul>
-        </nav>
+            <nav class="sidebar-fixed">
+              <ul>
+                <li><a href="/game">🎮 ゲーム</a></li>
+                <li><a href="/log">📝 体験ログ</a></li>
+              </ul>
 
-        <SearchButton />
-        <slot name="aside" />
-      </details>
-    </aside>
+              <SearchButton />
+
+              <BlogPostsLink heading="Recommended" posts={rankedPosts} />
+              <BlogPostsLink heading="Latest posts" posts={recentPosts} />
+              <BlogTagsLink heading="Tags" tags={tags} />
+
+              {informationPages.length > 0 && (
+              <div class="information-links">
+                <h2>Information</h2>
+                <ul>
+                  {informationPages.map((p) => (
+                    <li>
+                      <a href={`/${p.Slug}`}>{p.Title}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            </nav>
+          </details>
+        </aside>
+
 
     
           <!-- ➤ Main content -->

@@ -69,72 +69,70 @@ const numberOfRetry = 2
 
 export async function getAllPosts(): Promise<Post[]> {
   if (postsCache !== null) {
-    return Promise.resolve(postsCache)
+    return postsCache
   }
 
   const params: requestParams.QueryDatabase = {
     database_id: DATABASE_ID,
     filter: {
       and: [
-        {
-          property: 'Published',
-          checkbox: {
-            equals: true,
-          },
-        },
-        {
-          property: 'Date',
-          date: {
-            on_or_before: new Date().toISOString(),
-          },
-        },
+        { property: 'Published', checkbox: { equals: true } },
+        { property: 'Date', date: { on_or_before: new Date().toISOString() } },
       ],
     },
-    sorts: [
-      {
-        property: 'Date',
-        direction: 'descending',
-      },
-    ],
+    sorts: [{ property: 'Date', direction: 'descending' }],
     page_size: 100,
   }
 
   let results: responses.PageObject[] = []
+
   while (true) {
-    const res = await retry(
-      async (bail) => {
-        try {
-          return (await client.databases.query(
-            params as any // eslint-disable-line @typescript-eslint/no-explicit-any
-          )) as responses.QueryDatabaseResponse
-        } catch (error: unknown) {
-          if (error instanceof APIResponseError) {
-            if (error.status && error.status >= 400 && error.status < 500) {
-              bail(error)
-            }
+    const res = await retry(async (bail) => {
+      try {
+        return await client.databases.query(params as any)
+      } catch (error: unknown) {
+        if (error instanceof APIResponseError) {
+          if (error.status && error.status >= 400 && error.status < 500) {
+            bail(error)
           }
-          throw error
         }
-      },
-      {
-        retries: numberOfRetry,
+        throw error
       }
-    )
+    }, { retries: numberOfRetry })
 
     results = results.concat(res.results)
-
-    if (!res.has_more) {
-      break
-    }
-
-    params['start_cursor'] = res.next_cursor as string
+    if (!res.has_more) break
+    params.start_cursor = res.next_cursor as string
   }
 
   postsCache = results
     .filter((pageObject) => _validPageObject(pageObject))
-    .map((pageObject) => _buildPost(pageObject))
-    .filter((post) => post.PageType !== 'page')
+    .map(_buildPost)
+    .filter((post): post is Post => post !== undefined)
   return postsCache
+}
+
+
+export async function getAllPages(): Promise<Post[]> {
+  const params: requestParams.QueryDatabase = {
+    database_id: DATABASE_ID,
+    filter: {
+      and: [
+        {
+          property: 'Published',
+          checkbox: { equals: true },
+        },
+      ],
+    },
+    page_size: 100,
+  }
+
+  const res = await client.databases.query(params as any)
+
+  return res.results
+    .filter((pageObject) => _validPageObject(pageObject))
+    .map((pageObject) => _buildPost(pageObject))
+    .filter((post) => post.PageType === 'page')
 }
 
 // 全カテゴリと記事数を取得
@@ -168,6 +166,12 @@ export async function getCategoryCounts(): Promise<
   }));
 }
 
+export async function getPagesByType(type: PageType) {
+  const posts = await getAllPosts()
+  return posts.filter(p => p.PageType === type)
+}
+
+
 // Return total post count for a tag
 export async function getPostCountByTag(tag: string): Promise<number> {
   const res = await client.databases.query({
@@ -184,14 +188,14 @@ export async function getPostCountByTag(tag: string): Promise<number> {
 }
 
 export async function getPosts(pageSize = 10): Promise<Post[]> {
-  const allPosts = await getAllPosts()
-  return allPosts.slice(0, pageSize)
+  const posts = await getAllPosts()
+  return posts.slice(0, pageSize)
 }
 
-
 export async function getRankedPosts(pageSize = 10): Promise<Post[]> {
-  const allPosts = await getAllPosts()
-  return allPosts
+  const posts = await getAllPosts()
+
+  return posts
     .filter((post) => !!post.Rank)
     .sort((a, b) => {
       if (a.Rank > b.Rank) {
@@ -205,13 +209,12 @@ export async function getRankedPosts(pageSize = 10): Promise<Post[]> {
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
-  const allPosts = await getAllPosts()
-  return allPosts.find((post) => post.Slug === slug) || null
+  const posts = await getAllPosts()
+  return posts.find(post => post.Slug === slug) || null
 }
 
 export async function getPostByPageId(pageId: string): Promise<Post | null> {
-  const allPosts = await getAllPosts()
-  return allPosts.find((post) => post.PageId === pageId) || null
+  return await getAllPosts().find((post) => post.PageId === pageId) || null
 }
 
 export async function getPostsByTag(
@@ -220,11 +223,15 @@ export async function getPostsByTag(
 ): Promise<Post[]> {
   if (!tagName) return []
 
-  const allPosts = await getAllPosts()
-  return allPosts
-    .filter((post) => post.Tags.find((tag) => tag.name === tagName))
+  const posts = await getAllPosts()
+
+  return posts
+    .filter((post) =>
+      post.Tags?.some((tag) => tag.name === tagName)
+    )
     .slice(0, pageSize)
 }
+
 
 // page starts from 1 not 0
 export async function getPostsByPage(page: number): Promise<Post[]> {
@@ -232,14 +239,10 @@ export async function getPostsByPage(page: number): Promise<Post[]> {
     return []
   }
 
-  const allPosts = (await getAllPosts()).filter(
-    (post) => post.slug
-  )
-
   const startIndex = (page - 1) * NUMBER_OF_POSTS_PER_PAGE
   const endIndex = startIndex + NUMBER_OF_POSTS_PER_PAGE
 
-  return allPosts.slice(startIndex, endIndex)
+  return (await getAllPosts()).slice(startIndex, endIndex)
 }
 
 // page starts from 1 not 0
@@ -249,9 +252,7 @@ export async function getPostsByTagAndPage(
 ): Promise<Post[]> {
   const currentPage = page && page > 0 ? page : 1
 
-  const allPosts = await getAllPosts()
-
-const filteredPosts = allPosts.filter(
+const filteredPosts = (await getAllPosts()).filter(
   (post) =>
     post.Slug &&
     Array.isArray(post.Tags) &&
@@ -279,7 +280,6 @@ console.log(
 export async function getTotalPagesByTag(
   tagName: string
 ): Promise<number> {
-  const posts = await getAllPosts()
 
   const filtered = posts.filter(
     (post) =>
@@ -292,27 +292,27 @@ export async function getTotalPagesByTag(
 }
 
 export async function getNumberOfPages(): Promise<number> {
-  const allPosts = (await getAllPosts()).filter(
-    (post) => post.slug
-  )
 
-  return Math.ceil(allPosts.length / NUMBER_OF_POSTS_PER_PAGE)
+  return Math.ceil((await getAllPosts()).length / NUMBER_OF_POSTS_PER_PAGE)
 }
 
 export async function getNumberOfPagesByTag(
-  tagName: string
+  tagName?: string
 ): Promise<number> {
-  const allPosts = await getAllPosts()
+  if (!tagName) return 0
 
-  const posts = allPosts.filter(
+  const posts = (await getAllPosts()).filter(
     (post) =>
-      post.slug &&
+      post.Slug &&
       Array.isArray(post.Tags) &&
-      post.Tags.some((tag) => tag.name === tagName)
+      post.Tags.some(
+        (tag) => tag.name.toLowerCase() === tagName.toLowerCase()
+      )
   )
 
   return Math.ceil(posts.length / NUMBER_OF_POSTS_PER_PAGE)
 }
+
 
 export async function getAllBlocksByBlockId(blockId: string): Promise<Block[]> {
   let results: responses.BlockObject[] = []
@@ -444,22 +444,16 @@ export async function getBlock(blockId: string): Promise<Block> {
   return _buildBlock(res)
 }
 
-export async function getAllTags(): Promise<SelectProperty[]> {
-  const allPosts = await getAllPosts()
+export async function getAllTags(): Promise<string[]> {
+  const posts = await getAllPosts()
 
-  const tagNames: string[] = []
-  return allPosts
-    .flatMap((post) => post.Tags)
-    .reduce((acc, tag) => {
-      if (!tagNames.includes(tag.name)) {
-        acc.push(tag)
-        tagNames.push(tag.name)
-      }
-      return acc
-    }, [] as SelectProperty[])
-    .sort((a: SelectProperty, b: SelectProperty) =>
-      a.name.localeCompare(b.name)
+  return Array.from(
+    new Set(
+      posts
+        .filter(p => p.PageType === 'post')
+        .flatMap(p => (p.Tags ?? []).map(t => t.name))
     )
+  )
 }
 
 export async function downloadFile(url: URL) {
@@ -579,13 +573,11 @@ export async function getDatabase(): Promise<Database> {
 export async function getAllCategories(): Promise<
   { name: string; count: number }[]
 > {
-  const posts = await getAllPosts()
-
+  const posts = await getAllPosts() // ★ 必ずここで取得
   const map = new Map<string, number>()
 
   for (const post of posts) {
     if (!post.category) continue
-
     map.set(post.category, (map.get(post.category) ?? 0) + 1)
   }
 
@@ -1031,106 +1023,105 @@ function _validPageObject(pageObject: responses.PageObject): boolean {
   )
 }
 
-function _buildPost(pageObject: responses.PageObject): Post {
+function _buildPost(
+  pageObject: responses.PageObject
+): Post | undefined {
   const prop = pageObject.properties
 
-  const workImageProp = prop.WorkImage;
+  const title =
+    prop.Page?.title?.map(rt => rt.plain_text).join('') ?? ''
+
+  const slug =
+    prop.Slug?.rich_text?.map(rt => rt.plain_text).join('') ?? ''
+
+  // 🚨 必須条件
+  if (!title || !slug) {
+    console.warn('[SKIP PAGE]', pageObject.id, { title, slug })
+    return undefined
+  }
 
   let icon: FileObject | Emoji | null = null
   if (pageObject.icon) {
-    if (pageObject.icon.type === 'emoji' && 'emoji' in pageObject.icon) {
+    if (pageObject.icon.type === 'emoji') {
       icon = {
-        Type: pageObject.icon.type,
+        Type: 'emoji',
         Emoji: pageObject.icon.emoji,
       }
-    } else if (
-      pageObject.icon.type === 'external' &&
-      'external' in pageObject.icon
-    ) {
+    } else if (pageObject.icon.type === 'external') {
       icon = {
-        Type: pageObject.icon.type,
+        Type: 'external',
         Url: pageObject.icon.external?.url || '',
       }
     }
   }
 
   let cover: FileObject | null = null
-  if (pageObject.cover) {
+  if (pageObject.cover?.type === 'external') {
     cover = {
-      Type: pageObject.cover.type,
-      Url: pageObject.cover.external?.url || '',
+      Type: 'external',
+      Url: pageObject.cover.external.url,
     }
   }
 
   let featuredImage: FileObject | null = null
-  if (prop.FeaturedImage.files && prop.FeaturedImage.files.length > 0) {
-    if (prop.FeaturedImage.files[0].external) {
+  if (prop.FeaturedImage?.files?.length > 0) {
+    const file = prop.FeaturedImage.files[0]
+    if (file.external) {
       featuredImage = {
-        Type: prop.FeaturedImage.type,
-        Url: prop.FeaturedImage.files[0].external.url,
-      }
-    } else if (prop.FeaturedImage.files[0].file) {
-      featuredImage = {
-        Type: prop.FeaturedImage.type,
-        Url: prop.FeaturedImage.files[0].file.url,
-        ExpiryTime: prop.FeaturedImage.files[0].file.expiry_time,
-      }
-    }
-  }
-
-  let workImage: FileObject | null = null
-
-  const isMovie =
-    prop.Tags.multi_select?.some(tag => tag.name === '映画') ?? false
-
-  if (prop.WorkImage?.type === 'files') {
-    const file = prop.WorkImage.files?.[0]
-
-    if (file?.external?.url) {
-      workImage = {
         Type: 'external',
         Url: file.external.url,
       }
-    } else if (file?.file?.url) {
-      workImage = {
+    } else if (file.file) {
+      featuredImage = {
         Type: 'file',
         Url: file.file.url,
         ExpiryTime: file.file.expiry_time,
       }
-    } else if (isMovie) {
-      // ★ 映画記事は必ず画像を持たせる
-      workImage = {
-        Type: 'external',
-        Url: '/images/no-image.png',
-      }
     }
   }
 
-    const post: Post = {
-    PageId: pageObject.id,
-    Title: prop.Page.title
-      ? prop.Page.title.map((richText) => richText.plain_text).join('')
-      : '',
-    Icon: icon,
-    Cover: cover,
-    Slug: prop.Slug.rich_text
-      ? prop.Slug.rich_text.map((richText) => richText.plain_text).join('')
-      : '',
-    Date: prop.Date.date ? prop.Date.date.start : '',
-    Tags: prop.Tags.multi_select ? prop.Tags.multi_select : [],
-    Excerpt:
-      prop.Excerpt.rich_text && prop.Excerpt.rich_text.length > 0
-        ? prop.Excerpt.rich_text.map((richText) => richText.plain_text).join('')
-        : '',
-    FeaturedImage: featuredImage,
-    WorkImage: workImage,
-    Rank: prop.Rank.number ? prop.Rank.number : 0,
+  const isMovie =
+    prop.Tags?.multi_select?.some(tag => tag.name === '映画') ?? false
+
+  let workImage: FileObject | null = null
+  const file = prop.WorkImage?.files?.[0]
+
+  if (file?.external?.url) {
+    workImage = { Type: 'external', Url: file.external.url }
+  } else if (file?.file?.url) {
+    workImage = {
+      Type: 'file',
+      Url: file.file.url,
+      ExpiryTime: file.file.expiry_time,
+    }
+  } else if (isMovie) {
+    workImage = {
+      Type: 'external',
+      Url: '/images/no-image.png',
+    }
   }
 
-  console.log("post.Tags raw:", prop.Tags.multi_select);
+  const post: Post = {
+    PageId: pageObject.id,
+    Title: title,
+    Slug: slug,
+    Icon: icon,
+    Cover: cover,
+    Date: prop.Date?.date?.start ?? '',
+    Tags: prop.Tags?.multi_select ?? [],
+    PageType: prop.PageType?.select?.name ?? 'post',
+    Excerpt:
+      prop.Excerpt?.rich_text?.map(rt => rt.plain_text).join('') ?? '',
+    FeaturedImage: featuredImage,
+    WorkImage: workImage,
+    Rank: prop.Rank?.number ?? 0,
+  }
+
+  console.log('[PageType]', post.Title, post.PageType)
 
   return post
 }
+
 
 function _buildRichText(richTextObject: responses.RichTextObject): RichText {
   const annotation: Annotation = {

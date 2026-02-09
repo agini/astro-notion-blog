@@ -1,91 +1,37 @@
 ---
-import {
-  getPostsByPage,
-  getRankedPosts,
-  getAllTags,
-  getNumberOfPages,
-  getPostsByPage,
-} from '../../../lib/notion/client.ts'
-import Layout from '../../../layouts/Layout.astro'
-import NoContents from '../../../components/NoContents.astro'
-import PostDate from '../../../components/PostDate.astro'
-import PostTags from '../../../components/PostTags.astro'
-import PostTitle from '../../../components/PostTitle.astro'
-import PostFeaturedImage from '../../../components/PostFeaturedImage.astro'
-import PostExcerpt from '../../../components/PostExcerpt.astro'
-import ReadMoreLink from '../../../components/ReadMoreLink.astro'
-import Pagination from '../../../components/Pagination.astro'
-import BlogPostsLink from '../../../components/BlogPostsLink.astro'
-import BlogTagsLink from '../../../components/BlogTagsLink.astro'
-import styles from '../../../styles/blog.module.css'
+import Layout from "../../../layouts/Layout.astro";
+import { getPostCountByTag, getPostsByTagAndPage } from "@lib/notion";
+import { POSTS_PER_PAGE, GAME_CATEGORY } from "@lib/constants";
 
 export async function getStaticPaths() {
-  const numberOfPages = await getNumberOfPages()
+  const totalCount = await getPostCountByTag(GAME_CATEGORY);
+  const totalPages = Math.ceil(totalCount / POSTS_PER_PAGE);
 
-  let params = []
-  for (let i = 2; i <= numberOfPages; i++) {
-    params.push({ params: { page: i.toString() } })
-  }
-  return params
+  return Array.from({ length: totalPages }, (_, i) => ({
+    params: { page: String(i + 1) },
+  }));
 }
 
-const { page } = Astro.params
+const page = Number(Astro.params.page);
+const posts = await getPostsByTagAndPage(GAME_CATEGORY, page);
 
-const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
-  getPostsByPage(parseInt(page, 10)),
-  getRankedPosts(),
-  getAllTags(),
-  getNumberOfPages(),
-])
+const totalCount = await getPostCountByTag(GAME_CATEGORY);
+const TOTAL_PAGES = Math.ceil(totalCount / POSTS_PER_PAGE);
 ---
 
-<Layout title={`Posts ${page}/${numberOfPages}`} path={`/posts/page/${page}`}>
-  <div slot="main" class={styles.main}>
-    <header>
-      <div class="page-container">{page}/{numberOfPages}</div>
-    </header>
+<Layout title={`Game - Page ${page}`}>
+  <h1>Game（Page {page}）</h1>
 
-    {
-      posts.length === 0 ? (
-        <NoContents contents={posts} />
-      ) : (
-        posts.map((post) => (
-          <div class={styles.post} key={post.Slug}>
-            <PostDate post={post} />
-            <PostTags post={post} />
-            <PostTitle post={post} />
-            <PostFeaturedImage post={post} />
-            <PostExcerpt post={post} />
-            <ReadMoreLink post={post} />
-          </div>
-        ))
-      )
-    }
+  <ul>
+    {posts.map((post) => (
+      <li>
+        <a href={`/game/${post.slug}`}>{post.title}</a>
+      </li>
+    ))}
+  </ul>
 
-    <footer>
-      <Pagination
-        currentPage={parseInt(page, 10)}
-        numberOfPages={numberOfPages}
-      />
-    </footer>
-  </div>
-
-  <div slot="aside" class={styles.aside}>
-    <BlogPostsLink heading="Recommended" posts={rankedPosts} />
-    <BlogTagsLink heading="Tags" tags={tags} />
-  </div>
+  <nav>
+    {page > 1 && <a href={`/game/page/${page - 1}`}>Prev</a>}
+    {page < TOTAL_PAGES && <a href={`/game/page/${page + 1}`}>Next</a>}
+  </nav>
 </Layout>
-
-<style>
-  .page-container {
-    margin: 0;
-    line-height: 1.3;
-    font-size: 1.2rem;
-    font-weight: normal;
-  }
-  @media (max-width: 640px) {
-    .page-container {
-      font-size: 1.15rem;
-    }
-  }
-</style>

@@ -1,15 +1,24 @@
 ---
-import { getPostsByTagAndPage } from "../../lib/notion";
+import Layout from "../../layouts/Layout.astro";
+import { getPostsByTagAndPage, getPagesByType } from "../../lib/notion";
 
 const posts = await getPostsByTagAndPage("GAME", 1);
+
+// ⭐ 固定ページ（Information 用）
+const informationPages = await getPagesByType("page");
 ---
 
-<h1>game</h1>
+<Layout
+  title="Game"
+  informationPages={informationPages}
+>
+  <h1>Game</h1>
 
-<ul>
-  {posts.map((post) => (
-    <li>
-      <a href={`/log/${post.Slug}`}>{post.Title}</a>
-    </li>
-  ))}
-</ul>
+  <ul>
+    {posts.map((post) => (
+      <li>
+        <a href={`/game/${post.Slug}`}>{post.Title}</a>
+      </li>
+    ))}
+  </ul>
+</Layout>

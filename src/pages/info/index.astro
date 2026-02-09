@@ -1,14 +1,18 @@
 ---
-import { getPostsByTagAndPage } from "../../lib/notion";
-const posts = await getPostsByTagAndPage("info");
+import { getAllPosts } from '@/lib/notion/client'
+
+const posts = await getAllPosts()
+const infoPosts = posts.filter(p => p.PageType === 'info')
 ---
 
-<h1>info</h1>
+<h1>Information</h1>
 
 <ul>
-  {posts.map((post) => (
+  {infoPosts.map((post) => (
     <li>
-      <a href={`/info/${post.slug}`}>{post.title}</a>
+      <a href={`/${post.Slug}`}>
+        {post.Title}
+      </a>
     </li>
   ))}
 </ul>

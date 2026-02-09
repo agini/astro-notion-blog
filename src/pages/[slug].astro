@@ -3,7 +3,6 @@
 import * as interfaces from '../lib/interfaces'
 import {
   getPosts,
-  getAllPosts,
   getRankedPosts,
   getPostBySlug,
   getPostsByTag,
@@ -26,13 +25,22 @@ import PostRelativeLink from '../components/PostRelativeLink.astro'
 import BlogPostsLink from '../components/BlogPostsLink.astro'
 import BlogTagsLink from '../components/BlogTagsLink.astro'
 import styles from '../styles/blog.module.css'
+import type { Post } from '@/types/post'
+import { getAllPosts } from '@/lib/notion/client'
 
 export async function getStaticPaths() {
   const posts = await getAllPosts()
-  return posts.map((post: interfaces.Post) => ({ params: { slug: post.Slug } }))
+
+  return posts.map(post => ({
+    params: { slug: post.Slug },
+  }))
 }
 
 const { slug } = Astro.params
+const posts = await getAllPosts()
+const currentPostIndex = posts.findIndex(
+  (p: interfaces.Post) => p.Slug === slug
+)
 
 const post = await getPostBySlug(slug)
 if (!post) {
@@ -46,7 +54,14 @@ const blocks = await getAllBlocksByBlockId(post.PageId)
 let rankedPosts = []
 let recentPosts = []
 let tags = []
+
 let postsHavingSameTag = []
+
+if (!isPage) {
+  postsHavingSameTag =
+    await getPostsByTag(post.Tags[0]?.name, 6)
+}
+
 
 if (!isPage) {
   ;[rankedPosts, recentPosts, tags, postsHavingSameTag] =
@@ -54,7 +69,9 @@ if (!isPage) {
       getRankedPosts(),
       getPosts(5),
       getAllTags(),
-      getPostsByTag(post.Tags[0]?.name, 6),
+      post.Tags.length > 0
+  ? getPostsByTag(post.Tags[0].name, 6)
+  : Promise.resolve([])
     ])
 }
 
@@ -114,13 +131,18 @@ if (post.Cover?.Url) {
   cover = filePath(new URL(post.Cover.Url))
 }
 
-const allPosts = isPage ? [] : await getAllPosts()
-
-const currentPostIndex = allPosts.findIndex(
-  (p: interfaces.Post) => p.Slug === slug
+const postOnly = posts.filter(
+  (post) => post.PageType === 'post'
 )
-const prevPost = allPosts[currentPostIndex + 1]
-const nextPost = allPosts[currentPostIndex - 1]
+
+const allTags = await getAllTags(postOnly)
+
+const visibleTags = allTags.filter(
+  (tag) => tag.name !== 'information'
+)
+
+const prevPost = posts[currentPostIndex + 1]
+const nextPost = posts[currentPostIndex - 1]
 ---
 
 <Layout
@@ -147,7 +169,8 @@ const nextPost = allPosts[currentPostIndex - 1]
       </div>
       
       <PostBody blocks={blocks} />
-          {!isPage && <PostTags post={post} />}
+        {!isPage && 
+          <PostTags post={post} />}
         {!isPage && (
           <footer>
             <PostRelativeLink prevPost={prevPost} nextPost={nextPost} />
@@ -155,14 +178,24 @@ const nextPost = allPosts[currentPostIndex - 1]
         )}
       </article>
   </div>
-
-  <!-- Sidebar slot -->
-  {!isPage && (
-    <div slot="aside" class="aside">
-      <BlogPostsLink heading="Recommended" posts={rankedPosts} />
-      <BlogPostsLink heading="Latest posts" posts={recentPosts} />
-      <BlogTagsLink heading="Tags" tags={tags} />
-    </div>
-  )}
-  </div>
 </Layout>
+
+<style>
+  .information-links {
+    margin-bottom: 2rem;
+  }
+
+  .information-links h2 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .information-links ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .information-links li {
+    margin-bottom: 0.25rem;
+  }
+</style>
