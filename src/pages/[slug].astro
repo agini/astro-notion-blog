@@ -3,6 +3,8 @@ import styles from '@/styles/blog.module.css'
 
 import Layout from '@/layouts/Layout.astro'
 
+import Blocks from '@/components/Blocks.astro'
+
 import {
   getAllPosts,
   getPostBySlug,
@@ -21,11 +23,9 @@ import PostRelativeLink from '@/components/PostRelativeLink.astro'
 export async function getStaticPaths() {
   const posts = await getAllPosts()
 
-  return posts
-    .filter(post => post.PageType === 'post')
-    .map(post => ({
-      params: { slug: post.Slug },
-    }))
+  return posts.map(post => ({
+    params: { slug: post.Slug },
+  }))
 }
 
 const { slug } = Astro.params
@@ -61,7 +61,7 @@ const { prev: prevPost, next: nextPost } =
         {!isPage && <PostDate post={post} />}
         {!isPage && <PostTags post={post} />}
         <PostTitle post={post} enableLink={false} />
-      
+
       <div class={styles.imageWrapper}>
         <img
           src={post.WorkImage?.Url ?? "/images/no-image.png"}
