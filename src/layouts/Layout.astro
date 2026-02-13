@@ -57,8 +57,10 @@ const tags = Array.from(
     allPosts
       .filter(p => p.PageType === 'post')
       .flatMap(p => p.Tags ?? [])
+      .map(tag => tag.name)
   )
-)
+).sort()
+ .map(name => ({ name }))
 
 /* --- Site meta --- */
 const database = await getDatabase()
