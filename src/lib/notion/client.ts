@@ -192,6 +192,18 @@ export async function getPosts(pageSize = 10): Promise<Post[]> {
   return posts.slice(0, pageSize)
 }
 
+export async function getPostWithNeighbors(slug: string) {
+  const posts = await getAllPosts()
+  const postOnly = posts.filter(p => p.PageType === 'post')
+
+  const index = postOnly.findIndex(p => p.Slug === slug)
+
+  return {
+    prev: postOnly[index + 1],
+    next: postOnly[index - 1],
+  }
+}
+
 export async function getRankedPosts(pageSize = 10): Promise<Post[]> {
   const posts = await getAllPosts()
 
@@ -442,6 +454,25 @@ export async function getBlock(blockId: string): Promise<Block> {
   )
 
   return _buildBlock(res)
+}
+
+export async function getBlocks(blockId: string): Promise<Block[]> {
+  const blocks: Block[] = []
+
+  let cursor: string | undefined = undefined
+
+  do {
+    const res = await client.blocks.children.list({
+      block_id: blockId,
+      start_cursor: cursor,
+    })
+
+    blocks.push(...res.results.map(_buildBlock))
+
+    cursor = res.has_more ? res.next_cursor ?? undefined : undefined
+  } while (cursor)
+
+  return blocks
 }
 
 export async function getAllTags(): Promise<string[]> {

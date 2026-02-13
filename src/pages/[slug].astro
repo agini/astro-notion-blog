@@ -1,149 +1,51 @@
 ---
+import styles from '@/styles/blog.module.css'
 
-import * as interfaces from '../lib/interfaces'
+import Layout from '@/layouts/Layout.astro'
+
 import {
-  getPosts,
-  getRankedPosts,
+  getAllPosts,
   getPostBySlug,
-  getPostsByTag,
-  getBlock,
-  getAllTags,
-  getAllBlocksByBlockId,
-  downloadFile,
-} from '../lib/notion/client'
-import {
-  getPostLink,
-  filePath,
-  extractTargetBlocks,
-} from '../lib/blog-helpers'
-import Layout from '../layouts/Layout.astro'
-import PostDate from '../components/PostDate.astro'
-import PostTags from '../components/PostTags.astro'
-import PostTitle from '../components/PostTitle.astro'
-import PostBody from '../components/PostBody.astro'
-import PostRelativeLink from '../components/PostRelativeLink.astro'
-import BlogPostsLink from '../components/BlogPostsLink.astro'
-import BlogTagsLink from '../components/BlogTagsLink.astro'
-import styles from '../styles/blog.module.css'
-import type { Post } from '@/types/post'
-import { getAllPosts } from '@/lib/notion/client'
+  getPostWithNeighbors,
+  getBlocks
+} from '@/lib/notion/client'
+
+import { getPostLink } from '@/lib/blog-helpers'
+
+import PostDate from '@/components/PostDate.astro'
+import PostTags from '@/components/PostTags.astro'
+import PostTitle from '@/components/PostTitle.astro'
+import PostBody from '@/components/PostBody.astro'
+import PostRelativeLink from '@/components/PostRelativeLink.astro'
 
 export async function getStaticPaths() {
   const posts = await getAllPosts()
 
-  return posts.map(post => ({
-    params: { slug: post.Slug },
-  }))
+  return posts
+    .filter(post => post.PageType === 'post')
+    .map(post => ({
+      params: { slug: post.Slug },
+    }))
 }
 
 const { slug } = Astro.params
-const posts = await getAllPosts()
-const currentPostIndex = posts.findIndex(
-  (p: interfaces.Post) => p.Slug === slug
-)
 
 const post = await getPostBySlug(slug)
 if (!post) {
-  throw new Error(`Post not found. slug: ${slug}`)
+  throw new Error(`Post not found: ${slug}`)
 }
+
+const blocks = await getBlocks(post.PageId)
 
 const isPage = post.PageType === 'page'
 
-const blocks = await getAllBlocksByBlockId(post.PageId)
+const ogImage = post?.Cover ?? ''
 
-let rankedPosts = []
-let recentPosts = []
-let tags = []
+const { prev: prevPost, next: nextPost } =
+  await getPostWithNeighbors(slug)
 
-let postsHavingSameTag = []
-
-if (!isPage) {
-  postsHavingSameTag =
-    await getPostsByTag(post.Tags[0]?.name, 6)
-}
-
-
-if (!isPage) {
-  ;[rankedPosts, recentPosts, tags, postsHavingSameTag] =
-    await Promise.all([
-      getRankedPosts(),
-      getPosts(5),
-      getAllTags(),
-      post.Tags.length > 0
-  ? getPostsByTag(post.Tags[0].name, 6)
-  : Promise.resolve([])
-    ])
-}
-
-/// ➤ NEW: Determine OG image for social sharing
-let ogImage = ''
-if (post.FeaturedImage?.Url) {
-  ogImage = new URL(
-    filePath(new URL(post.FeaturedImage.Url)),
-    Astro.site
-  ).toString()
-}
-
-const fileAtacchedBlocks = extractTargetBlocks('image', blocks)
-  .concat(extractTargetBlocks('file', blocks))
-  .filter((block) => {
-    if (!block) {
-      return false
-    }
-    const imageOrFile = block.Image || block.File
-    return imageOrFile && imageOrFile.File && imageOrFile.File.Url
-  })
-
-// Download files
-await Promise.all(
-  fileAtacchedBlocks
-    .map(async (block) => {
-      const expiryTime = (block.Image || block.File).File.ExpiryTime
-      if (Date.parse(expiryTime) > Date.now()) {
-        return Promise.resolve(block)
-      }
-      return getBlock(block.Id)
-    })
-    .map((promise) =>
-      promise.then((block) => {
-        let url!: URL
-        try {
-          const fileUrl = (block.Image || block.File).File.Url
-          // 基準URLを使って絶対URLを作成
-          url = new URL(fileUrl, Astro.site)
-        } catch (error) {
-          console.log(
-            'Error with file URL:',
-            (block.Image || block.File)?.File?.Url,
-            error
-          )
-          return Promise.reject()
-        }
-        return Promise.resolve(url)
-      })
-    )
-    .map((promise) => promise.then(downloadFile))
-)
-
-let cover: string | undefined
-
-if (post.Cover?.Url) {
-  cover = filePath(new URL(post.Cover.Url))
-}
-
-const postOnly = posts.filter(
-  (post) => post.PageType === 'post'
-)
-
-const allTags = await getAllTags(postOnly)
-
-const visibleTags = allTags.filter(
-  (tag) => tag.name !== 'information'
-)
-
-const prevPost = posts[currentPostIndex + 1]
-const nextPost = posts[currentPostIndex - 1]
 ---
+
 
 <Layout
   title={post.Title}
